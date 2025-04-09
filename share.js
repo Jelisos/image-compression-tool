@@ -35,26 +35,35 @@ function initShareFeature() {
         // 更新批量模式状态和单图状态
         updateShareStatus();
         
+        // 网站主页链接
+        const siteUrl = 'https://jelisos.github.io/image-compression-tool/';
+        
         // 获取分享内容 - 检查是否有单张图片被处理
         const useImageShare = !isBatchMode || (isBatchMode && hasSingleImage);
         
         if (useImageShare) {
-            // 单图模式下或批量模式但有单张图片时分享图片
+            // 单图模式下或批量模式但有单张图片时
             const compressedImage = document.getElementById('compressed-image');
             if (compressedImage && compressedImage.src && 
                 !compressedImage.src.includes('jelisos.github.io') && 
                 compressedImage.style.display !== 'none') {
                 
-                shareImageUrl = compressedImage.src;
+                // 检查图片链接是否为data:URL
+                if (compressedImage.src.startsWith('data:image/')) {
+                    console.log('检测到data:URL图片，使用主页链接替代');
+                    shareImageUrl = siteUrl; // 使用主页链接替代
+                } else {
+                    shareImageUrl = compressedImage.src;
+                }
                 
                 // 更新模态窗口标题
                 const modalTitle = document.querySelector('.share-modal-header h2');
                 if (modalTitle) {
-                    modalTitle.textContent = '分享压缩后的图片';
+                    modalTitle.textContent = '分享图片压缩工具';
                 }
             } else {
                 // 如果找不到有效的压缩图片，则分享网站
-                shareImageUrl = window.location.href;
+                shareImageUrl = siteUrl;
                 
                 // 更新模态窗口标题
                 const modalTitle = document.querySelector('.share-modal-header h2');
@@ -64,7 +73,7 @@ function initShareFeature() {
             }
         } else {
             // 批量模式下分享本站
-            shareImageUrl = window.location.href;
+            shareImageUrl = siteUrl;
             
             // 更新模态窗口标题
             const modalTitle = document.querySelector('.share-modal-header h2');
@@ -76,11 +85,11 @@ function initShareFeature() {
         // 更新预览图片和链接
         const sharePreviewImage = document.getElementById('share-preview-image');
         if (sharePreviewImage) {
-            if (useImageShare && shareImageUrl && !shareImageUrl.startsWith('http')) {
-                // 单图模式下显示压缩后的图片
+            if (useImageShare && shareImageUrl && !shareImageUrl.startsWith('http') && !shareImageUrl.startsWith('data:')) {
+                // 单图模式下显示压缩后的图片(非数据URL)
                 sharePreviewImage.src = shareImageUrl;
             } else {
-                // 批量模式下显示网站Logo或默认图片
+                // 显示网站Logo或默认图片
                 sharePreviewImage.src = 'https://jelisos.github.io/image-compression-tool/bgz02.jpg';
                 // 如果没有Logo，可以创建一个文本预览
                 if (sharePreviewImage.naturalWidth === 0) {
@@ -91,7 +100,7 @@ function initShareFeature() {
         
         // 更新复制链接输入框
         if (copyLinkInput) {
-            if (useImageShare && shareImageUrl && !shareImageUrl.startsWith('http')) {
+            if (useImageShare && shareImageUrl && !shareImageUrl.startsWith('http') && !shareImageUrl.startsWith('data:')) {
                 copyLinkInput.value = shareImageUrl;
                 
                 // 更新复制链接区域标题
@@ -100,7 +109,7 @@ function initShareFeature() {
                     copyLinkTitle.textContent = '复制图片链接';
                 }
             } else {
-                copyLinkInput.value = window.location.href; // 本站主页链接
+                copyLinkInput.value = siteUrl; // 使用主页链接
                 
                 // 更新复制链接区域标题
                 const copyLinkTitle = document.querySelector('.copy-link-section h3');
@@ -389,6 +398,15 @@ function createQRCode(url) {
     const qrcodeContainer = document.getElementById('wechat-qrcode');
     if (!qrcodeContainer) return;
     
+    // 网站主页链接
+    const siteUrl = 'https://jelisos.github.io/image-compression-tool/';
+    
+    // 确保URL是有效的
+    if (url.startsWith('data:')) {
+        console.log('检测到二维码使用data:URL，替换为网站URL');
+        url = siteUrl;
+    }
+    
     // 清空现有内容
     qrcodeContainer.innerHTML = '';
     
@@ -396,6 +414,19 @@ function createQRCode(url) {
     const previewDiv = document.createElement('div');
     previewDiv.className = 'qrcode-preview';
     previewDiv.style.cssText = 'background:#fff; padding:10px; border:1px solid #ddd; border-radius:4px; text-align:center;';
+    
+    // 显示加载中提示
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'qrcode-loading';
+    loadingDiv.textContent = '二维码加载中...';
+    loadingDiv.style.cssText = 'margin-bottom:10px; color:#666;';
+    qrcodeContainer.appendChild(loadingDiv);
+    
+    // 检查URL是否有效
+    if (!url.startsWith('http')) {
+        console.warn('无效URL:', url);
+        url = siteUrl;
+    }
     
     // 使用在线二维码生成服务
     const qrcodeImg = document.createElement('img');
@@ -411,15 +442,8 @@ function createQRCode(url) {
         }
     };
     
-    // 显示加载中提示
-    const loadingDiv = document.createElement('div');
-    loadingDiv.className = 'qrcode-loading';
-    loadingDiv.textContent = '二维码加载中...';
-    loadingDiv.style.cssText = 'margin-bottom:10px; color:#666;';
-    
     // 添加到容器
     previewDiv.appendChild(qrcodeImg);
-    qrcodeContainer.appendChild(loadingDiv);
     qrcodeContainer.appendChild(previewDiv);
     
     // 备选方案：如果在线生成服务失败
@@ -432,13 +456,26 @@ function createQRCode(url) {
  * 绑定分享平台点击事件
  */
 function bindSharePlatformEvents(useImageShare) {
+    // 网站主页链接
+    const siteUrl = 'https://jelisos.github.io/image-compression-tool/';
+    
     // 获取当前要分享的URL和标题
-    const url = useImageShare && shareImageUrl && !shareImageUrl.startsWith('http') ? 
-        shareImageUrl : window.location.href;
+    // 检查是否为data:URL，如果是则替换为网站URL
+    let url = useImageShare && shareImageUrl && !shareImageUrl.startsWith('http') && !shareImageUrl.startsWith('data:') ? 
+        shareImageUrl : siteUrl;
+    
+    // 确保URL是有效的web URL
+    if (url.startsWith('data:')) {
+        console.log('检测到data:URL，替换为网站URL');
+        url = siteUrl;
+    }
         
     const title = useImageShare ? 
         '我用图片压缩工具压缩了一张图片' : 
         '推荐一个超好用的图片压缩工具！';
+    
+    console.log('分享URL:', url);
+    console.log('分享标题:', title);
     
     // 微信分享
     const wechatShare = document.getElementById('wechat-share');
@@ -448,13 +485,17 @@ function bindSharePlatformEvents(useImageShare) {
         wechatShare.parentNode.replaceChild(newWechatShare, wechatShare);
         
         // 添加新事件监听器
-        newWechatShare.addEventListener('click', () => {
+        newWechatShare.addEventListener('click', function(e) {
+            if (e) e.preventDefault(); // 防止冒泡
+            
             // 显示微信二维码区域
             const qrcodeContainer = document.getElementById('wechat-qrcode-container');
             if (qrcodeContainer) {
                 qrcodeContainer.style.display = 'block';
-                // 生成二维码
-                createQRCode(url);
+                
+                // 确保使用网站URL生成二维码
+                const qrUrl = url.startsWith('data:') ? siteUrl : url;
+                createQRCode(qrUrl);
             }
         });
     }
@@ -467,10 +508,12 @@ function bindSharePlatformEvents(useImageShare) {
         weiboShare.parentNode.replaceChild(newWeiboShare, weiboShare);
         
         // 添加新事件监听器
-        newWeiboShare.addEventListener('click', () => {
+        newWeiboShare.addEventListener('click', function(e) {
+            if (e) e.preventDefault(); // 防止冒泡
+            
             // 确保分享URL是有效的Web URL
-            const shareUrl = url.startsWith('http') ? 
-                url : window.location.href;
+            const shareUrl = url.startsWith('data:') || !url.startsWith('http') ? 
+                siteUrl : url;
                 
             const shareLink = `http://service.weibo.com/share/share.php?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(title)}`;
             window.open(shareLink, '_blank');
@@ -485,13 +528,15 @@ function bindSharePlatformEvents(useImageShare) {
         qqShare.parentNode.replaceChild(newQQShare, qqShare);
         
         // 添加新事件监听器
-        newQQShare.addEventListener('click', () => {
+        newQQShare.addEventListener('click', function(e) {
+            if (e) e.preventDefault(); // 防止冒泡
+            
             // 确保分享URL是有效的Web URL
-            const shareUrl = url.startsWith('http') ? 
-                url : window.location.href;
+            const shareUrl = url.startsWith('data:') || !url.startsWith('http') ? 
+                siteUrl : url;
                 
             const shareLink = `http://connect.qq.com/widget/shareqq/index.html?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(title)}`;
-            window.open(shareLink, '_blank');
+        window.open(shareLink, '_blank');
         });
     }
     
@@ -503,10 +548,12 @@ function bindSharePlatformEvents(useImageShare) {
         facebookShare.parentNode.replaceChild(newFacebookShare, facebookShare);
         
         // 添加新事件监听器
-        newFacebookShare.addEventListener('click', () => {
+        newFacebookShare.addEventListener('click', function(e) {
+            if (e) e.preventDefault(); // 防止冒泡
+            
             // 确保分享URL是有效的Web URL
-            const shareUrl = url.startsWith('http') ? 
-                url : window.location.href;
+            const shareUrl = url.startsWith('data:') || !url.startsWith('http') ? 
+                siteUrl : url;
                 
             const shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
             window.open(shareLink, '_blank');
@@ -521,10 +568,12 @@ function bindSharePlatformEvents(useImageShare) {
         twitterShare.parentNode.replaceChild(newTwitterShare, twitterShare);
         
         // 添加新事件监听器
-        newTwitterShare.addEventListener('click', () => {
+        newTwitterShare.addEventListener('click', function(e) {
+            if (e) e.preventDefault(); // 防止冒泡
+            
             // 确保分享URL是有效的Web URL
-            const shareUrl = url.startsWith('http') ? 
-                url : window.location.href;
+            const shareUrl = url.startsWith('data:') || !url.startsWith('http') ? 
+                siteUrl : url;
                 
             const text = useImageShare ? 
                 '我压缩了一张图片，效果很好!' : 
@@ -543,12 +592,11 @@ function bindSharePlatformEvents(useImageShare) {
         instagramShare.parentNode.replaceChild(newInstagramShare, instagramShare);
         
         // 添加新事件监听器
-        newInstagramShare.addEventListener('click', () => {
-            if (useImageShare) {
-                alert('Instagram不支持直接分享链接，请将图片保存后在Instagram应用中分享');
-            } else {
-                alert('Instagram不支持直接分享链接，请复制本站链接后在Instagram中分享');
-            }
+        newInstagramShare.addEventListener('click', function(e) {
+            if (e) e.preventDefault(); // 防止冒泡
+            
+            // 始终指向网站
+            alert('Instagram不支持直接分享链接，请复制本站链接后在Instagram中分享');
         });
     }
 }
