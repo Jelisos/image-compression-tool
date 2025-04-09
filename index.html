@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片压缩工具</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="share.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部标题区域 -->
+        <header class="header">
+            <h1>图片压缩工具</h1>
+            <p>上传图片，调整压缩比例，减小文件大小</p>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main-content">
+            <!-- 上传区域 -->
+            <div class="upload-section" id="upload-section">
+                <div class="upload-area" id="upload-area">
+                    <svg class="upload-icon" id="upload-icon" width="80" height="80" viewBox="0 0 24 24">
+                        <use xlink:href="#icon-upload"></use>
+                    </svg>
+                    <p>拖放图片到这里或点击上传</p>
+                    <p class="upload-hint">支持 PNG、JPG 等格式，可选择多个文件</p>
+                    <input type="file" id="file-input" accept="image/*" multiple hidden>
+                </div>
+                <div class="button-group">
+                    <button class="upload-button" id="upload-button">选择图片</button>
+                    <button class="upload-button batch-mode-button" id="batch-mode-toggle">单图模式</button>
+                </div>
+            </div>
+            
+            <!-- 压缩比例建议按钮 -->
+            <div class="tips-button-container">
+                <button class="tips-button" id="compression-tips-button">
+                    <svg class="tips-icon" width="16" height="16" viewBox="0 0 24 24"><use xlink:href="#icon-tips"></use></svg>
+                    压缩比例建议
+                </button>
+            </div>
+
+            <!-- 图片预览和压缩区域 -->
+            <div class="preview-section" id="preview-section" hidden>
+                <!-- 原图预览 -->
+                <div class="preview-container">
+                    <h2>原始图片</h2>
+                    <div class="image-preview">
+                        <img id="original-image" src="https://jelisos.github.io/image-compression-tool/bgz02.jpg" alt="原始图片">
+                    </div>
+                    <div class="image-info">
+                        <p>文件大小: <span id="original-size">2.33 MB</span></p>
+                        <p>尺寸: <span id="original-dimensions">5120 x 3200</span></p>
+                    </div>
+                </div>
+
+                <!-- 压缩图片预览 -->
+                <div class="preview-container">
+                    <h2>压缩后图片</h2>
+                    <div class="image-preview">
+                        <img id="compressed-image" src="https://jelisos.github.io/image-compression-tool/bgz02.jpg" alt="压缩后图片">
+                    </div>
+                    <div class="image-info">
+                        <p>文件大小: <span id="compressed-size">180.4 KB</span></p>
+                        <p>尺寸: <span id="compressed-dimensions">1920 x 1200</span></p>
+                        <p>压缩率: <span id="compression-ratio">92.45%</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 压缩控制区域 -->
+            <div class="compression-controls" id="compression-controls" hidden>
+                <div class="slider-container">
+                    <label for="quality-slider">压缩质量:</label>
+                    <input type="range" id="quality-slider" min="0" max="100" value="75" class="slider">
+                    <span id="quality-value">75%</span>
+                </div>
+                <div class="buttons-container">
+                    <button id="compress-button" class="primary-button">压缩图片</button>
+                    <button id="download-button" class="secondary-button" disabled>下载压缩图片</button>
+                    <button id="download-all-button" class="secondary-button" disabled>批量下载</button>
+                    <button id="share-button" class="share-button" disabled>
+                        <svg class="share-icon" width="18" height="18" viewBox="0 0 24 24">
+                            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                        </svg>
+                        分享
+                    </button>
+                    <button id="reset-button" class="tertiary-button">重新上传</button>
+                </div>
+            </div>
+            
+            <!-- 批量处理区域 -->
+            <div class="batch-processing-section" id="batch-processing-section" hidden>
+                <h2>批量处理队列</h2>
+                <div class="batch-progress">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="batch-progress-bar"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span id="processed-count">0</span>/<span id="total-count">0</span> 已处理
+                    </div>
+                </div>
+                <div class="batch-list" id="batch-list">
+                    <!-- 批量处理的图片列表将在这里动态生成 -->
+                </div>
+            </div>
+        </main>
+
+        <!-- 压缩比例建议模态窗口 -->
+        <div id="compression-tips-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>压缩比例建议</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="tips-section">
+                        <h3>照片类图片</h3>
+                        <ul>
+                            <li><strong>网站展示</strong>：60-80%质量，平衡视觉效果和加载速度</li>
+                            <li><strong>社交媒体分享</strong>：70-85%质量，保持较好的视觉效果</li>
+                            <li><strong>存档备份</strong>：85-95%质量，保留更多细节</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tips-section">
+                        <h3>图表/UI元素</h3>
+                        <ul>
+                            <li><strong>简单图形和UI元素</strong>：50-70%质量，通常效果变化不明显</li>
+                            <li><strong>复杂图表和信息图</strong>：75-85%质量，确保文字和细节清晰</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tips-section">
+                        <h3>艺术作品/摄影作品</h3>
+                        <ul>
+                            <li><strong>作品展示</strong>：80-90%质量，保持艺术细节和色彩还原</li>
+                            <li><strong>缩略图</strong>：40-60%质量，仅用于预览</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tips-section">
+                        <h3>保真阈值指南</h3>
+                        <ul>
+                            <li><strong>75%质量</strong>：大多数场景下的推荐默认值，平衡文件大小和图片质量</li>
+                            <li><strong>85%质量</strong>：高质量阈值，超过此值文件大小增加显著但质量提升不明显</li>
+                            <li><strong>60%质量</strong>：可接受的最低阈值，低于此值图片质量通常会有明显下降</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tips-section">
+                        <h3>优化建议</h3>
+                        <ul>
+                            <li>根据图片最终使用尺寸调整分辨率，再进行压缩效果更佳</li>
+                            <li>对于需要透明背景的图片，优先选择PNG格式</li>
+                            <li>对于照片类图片，优先选择JPG格式并适当压缩</li>
+                            <li>压缩前备份原图，以便需要时重新处理</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分享模态窗口 -->
+        <div id="share-modal" class="share-modal">
+            <div class="share-modal-content">
+                <div class="share-modal-header">
+                    <h2>分享压缩后的图片</h2>
+                    <span class="close-share-modal">&times;</span>
+                </div>
+                <div class="share-modal-body">
+                    <div class="share-image-preview">
+                        <img id="share-preview-image" src="https://jelisos.github.io/image-compression-tool/bgz02.jpg" alt="分享预览图">
+                    </div>
+                    
+                    <h3>选择分享平台</h3>
+                    <div class="share-platforms">
+                        <!-- 国内社交平台 -->
+                        <div id="wechat-share" class="share-platform">
+                            <div class="platform-icon wechat">
+                                <img src="icons/wechat.svg" alt="微信">
+                            </div>
+                            <div class="platform-name">微信</div>
+                        </div>
+                        <div id="weibo-share" class="share-platform">
+                            <div class="platform-icon weibo">
+                                <img src="icons/weibo.svg" alt="微博">
+                            </div>
+                            <div class="platform-name">微博</div>
+                        </div>
+                        <div id="qq-share" class="share-platform">
+                            <div class="platform-icon qq">
+                                <img src="icons/qq.svg" alt="QQ">
+                            </div>
+                            <div class="platform-name">QQ</div>
+                        </div>
+                        
+                        <!-- 国外社交平台 -->
+                        <div id="facebook-share" class="share-platform">
+                            <div class="platform-icon facebook">
+                                <img src="icons/facebook.svg" alt="Facebook">
+                            </div>
+                            <div class="platform-name">Facebook</div>
+                        </div>
+                        <div id="twitter-share" class="share-platform">
+                            <div class="platform-icon twitter">
+                                <img src="icons/twitter.svg" alt="Twitter">
+                            </div>
+                            <div class="platform-name">Twitter</div>
+                        </div>
+                        <div id="instagram-share" class="share-platform">
+                            <div class="platform-icon instagram">
+                                <img src="icons/instagram.svg" alt="Instagram">
+                            </div>
+                            <div class="platform-name">Instagram</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 微信二维码区域 -->
+                    <div id="wechat-qrcode-container" class="wechat-qrcode-container">
+                        <div class="wechat-qrcode-title">微信扫码分享</div>
+                        <div id="wechat-qrcode"></div>
+                        <p class="qrcode-hint">打开微信扫一扫，将图片分享给好友</p>
+                    </div>
+                    
+                    <div class="copy-link-section">
+                        <h3>复制图片链接</h3>
+                        <div class="copy-link-container">
+                            <input type="text" id="copy-link-input" readonly>
+                            <button id="copy-link-button" class="copy-button">复制</button>
+                        </div>
+                        <p id="copy-success-message" class="copy-success-message">链接已复制!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部信息区域 -->
+        <footer class="footer">
+            <p>© 2023 图片压缩工具 - 在浏览器中压缩图片，保护您的隐私</p>
+        </footer>
+    </div>
+
+    <!-- SVG图标定义 -->
+    <svg style="display: none;">
+        <symbol id="icon-upload" viewBox="0 0 24 24">
+            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+        </symbol>
+        <symbol id="icon-tips" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+        </symbol>
+        <symbol id="icon-share" viewBox="0 0 24 24">
+            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+        </symbol>
+    </svg>
+
+    <!-- 加载必要的JavaScript库 -->
+    <script src="libs/browser-image-compression.min.js"></script>
+    <script src="libs/jszip.min.js"></script>
+    <script src="libs/FileSaver.min.js"></script>
+    <script src="script.js"></script>
+    <script src="share.js"></script>
+</body>
+</html>
