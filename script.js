@@ -1893,3 +1893,73 @@ function setLoadingState(isLoading) {
         console.log('已注入本地替代实现，应用将可以离线工作');
     }
 })();
+
+
+/**
+ * 图片懒加载优化
+ * 为大型图片添加懒加载功能，提高页面加载速度
+ */
+function setupLazyLoading() {
+    // 检查浏览器是否原生支持懒加载
+    if ('loading' in HTMLImageElement.prototype) {
+      // 浏览器支持懒加载
+      const images = document.querySelectorAll("img[data-src]");
+      images.forEach(img => {
+        img.src = img.dataset.src;
+        img.loading = "lazy";
+      });
+    } else {
+      // 浏览器不支持懒加载，使用IntersectionObserver
+      let lazyImages = [].slice.call(document.querySelectorAll("img[data-src]"));
+      
+      if ("IntersectionObserver" in window) {
+        let lazyImageObserver = new IntersectionObserver(function(entries, observer) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              let lazyImage = entry.target;
+              lazyImage.src = lazyImage.dataset.src;
+              lazyImageObserver.unobserve(lazyImage);
+            }
+          });
+        });
+  
+        lazyImages.forEach(function(lazyImage) {
+          lazyImageObserver.observe(lazyImage);
+        });
+      } else {
+        // 回退到更简单的方法
+        let active = false;
+  
+        const lazyLoad = function() {
+          if (active === false) {
+            active = true;
+  
+            setTimeout(function() {
+              lazyImages.forEach(function(lazyImage) {
+                if ((lazyImage.getBoundingClientRect().top <= window.innerHeight && lazyImage.getBoundingClientRect().bottom >= 0) && getComputedStyle(lazyImage).display !== "none") {
+                  lazyImage.src = lazyImage.dataset.src;
+                  lazyImages = lazyImages.filter(function(image) { return image !== lazyImage; });
+  
+                  if (lazyImages.length === 0) {
+                    document.removeEventListener("scroll", lazyLoad);
+                    window.removeEventListener("resize", lazyLoad);
+                    window.removeEventListener("orientationchange", lazyLoad);
+                  }
+                }
+              });
+  
+              active = false;
+            }, 200);
+          }
+        };
+  
+        document.addEventListener("scroll", lazyLoad);
+        window.addEventListener("resize", lazyLoad);
+        window.addEventListener("orientationchange", lazyLoad);
+        lazyLoad();
+      }
+    }
+  }
+  
+  // 页面加载完成后设置懒加载
+  window.addEventListener('load', setupLazyLoading);

@@ -919,3 +919,227 @@ body {
         width: 100%;
     }
 }
+
+/* 添加到styles.css中 */
+.notification-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    margin-left: 8px;
+    background-color: #6c63ff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .notification-button:hover {
+    background-color: #5a52d8;
+  }
+  
+  .notification-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  .notification-button::before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    background-image: url('icons/notification.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+
+/* PWA 安装按钮样式 */
+.pwa-install-button-container {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.pwa-manual-install-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.pwa-manual-install-button:hover {
+    background-color: #357ad8;
+}
+
+.pwa-manual-install-button svg {
+    margin-right: 5px;
+}
+
+/* 在PWA已安装的环境中隐藏按钮 */
+@media (display-mode: standalone) {
+    .pwa-install-button-container {
+        display: none;
+    }
+}
+
+/* PWA 安装提示样式 */
+.pwa-install-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    width: 90%;
+    max-width: 480px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 0;
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translate(-50%, 100%);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
+.pwa-install-prompt {
+    padding: 16px;
+}
+
+.pwa-install-prompt p {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    color: #333;
+    text-align: center;
+}
+
+.pwa-install-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.pwa-install-yes {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.pwa-install-yes:hover {
+    background-color: #357ad8;
+}
+
+.pwa-install-no {
+    background-color: #f5f7fa;
+    color: #666;
+    border: 1px solid #ddd;
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.pwa-install-no:hover {
+    background-color: #e8e8e8;
+}
+
+/* 网络状态指示器样式 */
+#network-status {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 9999;
+  transition: opacity 0.5s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 离线模式指示器 */
+.offline-indicator {
+  display: inline-block;
+  padding: 4px 8px;
+  background-color: #ff9800;
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* PWA已安装时的样式调整 */
+@media (display-mode: standalone) {
+  /* 隐藏某些仅在浏览器中显示的元素 */
+  .browser-only {
+    display: none !important;
+  }
+  
+  /* 应用模式下的特殊样式 */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* 为安装后的PWA提供更多空间 */
+  .container {
+    max-width: 100%;
+  }
+}
+
+/* 更新提示样式 */
+.update-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4a90e2;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 90%;
+  width: 320px;
+}
+
+.update-toast button {
+  background-color: white;
+  color: #4a90e2;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  margin-left: 12px;
+  cursor: pointer;
+  font-weight: bold;
+}

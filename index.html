@@ -28,6 +28,61 @@
     <!-- 添加网站图标 -->
     <link rel="icon" type="image/png" href="icons/favicon.png">
     <link rel="canonical" href="https://jelisos.github.io/image-compression-tool/">
+    
+    <!-- 添加Web App清单引用 -->
+    <link rel="manifest" href="app/manifest.json">
+    
+    <!-- 添加iOS支持的元标签 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="图片压缩">
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+    
+    <!-- 添加Windows磁贴支持 -->
+    <meta name="msapplication-TileImage" content="icons/icon-144x144.png">
+    <meta name="msapplication-TileColor" content="#4a90e2">
+
+    <!-- PWA相关元标签 -->
+    <link rel="manifest" href="app/manifest.json">
+    <meta name="theme-color" content="#4a90e2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="图片压缩">
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+    
+    <!-- 关键 CSS（内联） -->
+    <style>
+        /* 这里放置关键路径 CSS，保持页面初始渲染不闪烁 */
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+    </style>
+    
+    <!-- 预加载重要资源 -->
+    <link rel="preload" href="styles.css" as="style">
+    <link rel="preload" href="libs/browser-image-compression.min.js" as="script">
+    
+    <!-- 延迟加载非关键 CSS -->
+    <link rel="stylesheet" href="styles.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="share.css" media="print" onload="this.media='all'">
+    
+    <!-- 备用方案，确保 CSS 会被加载 -->
+    <noscript>
+        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet" href="share.css">
+    </noscript>
 </head>
 <body>
     <div class="container">
@@ -36,6 +91,16 @@
             <h1>图片压缩工具</h1>
             <p>极速压缩图片，保持高质量效果，减小图片大小</p>
         </header>
+
+        <!-- 在 header 下方或适当位置添加 -->
+        <div class="pwa-install-button-container">
+            <button id="manual-install-button" class="pwa-manual-install-button">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zM12 3L7 8h4v8h2V8h4L12 3z"/>
+                </svg>
+                安装为应用
+            </button>
+        </div>
 
         <!-- 主要内容区域 -->
         <main class="main-content">
@@ -69,7 +134,7 @@
                 <div class="preview-container">
                     <h2>原始图片</h2>
                     <div class="image-preview">
-                        <img id="original-image" src="https://jelisos.github.io/image-compression-tool/bgz02.jpg" alt="原始图片">
+                        <img id="original-image" src="placeholder-image.svg" data-src="https://jelisos.github.io/image-compression-tool/bgz02.jpg" alt="原始图片">
                     </div>
                     <div class="image-info">
                         <p>文件大小: <span id="original-size">2.33 MB</span></p>
@@ -81,7 +146,7 @@
                 <div class="preview-container">
                     <h2>压缩后图片</h2>
                     <div class="image-preview">
-                        <img id="compressed-image" src="https://jelisos.github.io/image-compression-tool/bgz02.jpg" alt="压缩后图片">
+                        <img id="compressed-image" src="placeholder-image.svg" data-src="https://jelisos.github.io/image-compression-tool/bgz02.jpg" alt="压缩后图片">
                     </div>
                     <div class="image-info">
                         <p>文件大小: <span id="compressed-size">180.4 KB</span></p>
@@ -109,6 +174,7 @@
                         分享
                     </button>
                     <button id="reset-button" class="tertiary-button">重新上传</button>
+                    <button id="notify-button" class="notification-button">开启通知提醒</button>
                 </div>
             </div>
             
@@ -313,12 +379,28 @@
         </symbol>
     </svg>
 
-    <!-- 加载必要的JavaScript库 -->
-    <script src="libs/browser-image-compression.min.js"></script>
-    <script src="libs/jszip.min.js"></script>
-    <script src="libs/FileSaver.min.js"></script>
-    <script src="script.js"></script>
-    <script src="share.js"></script>
+    <!-- 优化 JavaScript 加载 -->
+    <script src="libs/browser-image-compression.min.js" defer></script>
+    <script src="libs/jszip.min.js" defer></script>
+    <script src="libs/FileSaver.min.js" defer></script>
+    <script src="script.js" defer></script>
+    <script src="share.js" defer></script>
+    <script src="app/notifications.js" defer></script>
+    
+    <!-- 注册服务工作线程 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./app/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker 注册成功，作用域：', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker 注册失败：', error);
+                    });
+            });
+        }
+    </script>
 
         <!-- 底部信息区域增加关键词 -->
         <footer class="footer">
@@ -333,5 +415,129 @@
                 })();
                 </script>
         </footer>
+
+    <!-- 添加PWA安装提示 -->
+    <div id="pwa-install-container" class="pwa-install-container" hidden>
+        <div class="pwa-install-prompt">
+            <p>将Jelisos图片压缩工具添加到主屏幕，随时使用</p>
+            <div class="pwa-install-buttons">
+                <button id="pwa-install-button" class="pwa-install-yes">安装</button>
+                <button id="pwa-install-cancel" class="pwa-install-no">暂不</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载脚本 -->
+    <script>
+        // 处理PWA安装提示
+        let deferredPrompt;
+        const pwaInstallContainer = document.getElementById('pwa-install-container');
+        const pwaInstallButton = document.getElementById('pwa-install-button');
+        const pwaInstallCancel = document.getElementById('pwa-install-cancel');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // 阻止Chrome 67及更早版本自动显示安装提示
+            e.preventDefault();
+            // 保存事件，以便稍后触发
+            deferredPrompt = e;
+            // 显示自定义安装提示
+            pwaInstallContainer.hidden = false;
+        });
+
+        pwaInstallButton.addEventListener('click', () => {
+            // 隐藏安装提示
+            pwaInstallContainer.hidden = true;
+            // 显示安装提示
+            deferredPrompt.prompt();
+            // 等待用户响应安装提示
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('用户接受了安装');
+                } else {
+                    console.log('用户取消了安装');
+                }
+                deferredPrompt = null;
+            });
+        });
+
+        pwaInstallCancel.addEventListener('click', () => {
+            // 隐藏安装提示
+            pwaInstallContainer.hidden = true;
+        });
+
+        // 检测PWA是否已安装
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('应用已安装');
+            pwaInstallContainer.hidden = true;
+        });
+
+        // 手动安装按钮逻辑
+        const manualInstallButton = document.getElementById('manual-install-button');
+        if (manualInstallButton) {
+            // 默认隐藏按钮，当可安装时才显示
+            manualInstallButton.style.display = 'none';
+            
+            window.addEventListener('beforeinstallprompt', (e) => {
+                // 显示手动安装按钮
+                manualInstallButton.style.display = 'flex';
+                
+                manualInstallButton.addEventListener('click', () => {
+                    // 显示安装提示
+                    e.prompt();
+                    // 等待用户响应
+                    e.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('用户通过手动按钮安装了应用');
+                            manualInstallButton.style.display = 'none';
+                        }
+                        deferredPrompt = null;
+                    });
+                });
+            });
+            
+            // 如果已经安装，则隐藏按钮
+            window.addEventListener('appinstalled', () => {
+                manualInstallButton.style.display = 'none';
+            });
+        }
+    </script>
+
+    <!-- 在其他脚本之后引用 -->
+    <script src="app/pwa-updater.js"></script>
+
+    <!-- 在页面底部添加这段调试代码 -->
+    <script>
+        console.log('PWA 检查开始...');
+        
+        // 检查 manifest.json
+        fetch('app/manifest.json')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ manifest.json 加载成功');
+                } else {
+                    console.error('❌ manifest.json 加载失败');
+                }
+            })
+            .catch(error => {
+                console.error('❌ manifest.json 加载错误:', error);
+            });
+        
+        // 检查 service worker 支持
+        if ('serviceWorker' in navigator) {
+            console.log('✅ 浏览器支持 Service Worker');
+        } else {
+            console.error('❌ 浏览器不支持 Service Worker');
+        }
+        
+        // 检查安装事件
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('✅ beforeinstallprompt 事件触发');
+        });
+        
+        // 检查显示模式
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('应用已经以 standalone 模式运行');
+        }
+    </script>
 </body>
 </html>
