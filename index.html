@@ -92,15 +92,7 @@
             <p>极速压缩图片，保持高质量效果，减小图片大小</p>
         </header>
 
-        <!-- 在 header 下方或适当位置添加 -->
-        <div class="pwa-install-button-container">
-            <button id="manual-install-button" class="pwa-manual-install-button">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zM12 3L7 8h4v8h2V8h4L12 3z"/>
-                </svg>
-                安装为应用
-            </button>
-        </div>
+
 
         <!-- 主要内容区域 -->
         <main class="main-content">
@@ -175,6 +167,12 @@
                     </button>
                     <button id="reset-button" class="tertiary-button">重新上传</button>
                     <button id="notify-button" class="notification-button">开启通知提醒</button>
+                    <button id="manual-install-button" class="pwa-manual-install-button">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18 15v3H6v-3H4v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zM12 3L7 8h4v8h2V8h4L12 3z"/>
+                        </svg>
+                        安装为应用
+                    </button>
                 </div>
             </div>
             
@@ -391,7 +389,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
+                navigator.serviceWorker.register('service-worker.js')
                     .then(registration => {
                         console.log('Service Worker 注册成功，作用域：', registration.scope);
                     })
@@ -473,19 +471,19 @@
 
         // 手动安装按钮逻辑
         const manualInstallButton = document.getElementById('manual-install-button');
+        let deferredPrompt; // 确保在全局范围内声明
+
         if (manualInstallButton) {
-            // 默认隐藏按钮，当可安装时才显示
-            manualInstallButton.style.display = 'none';
-            
+            manualInstallButton.style.display = 'flex'; // 确保按钮可见
+
             window.addEventListener('beforeinstallprompt', (e) => {
-                // 显示手动安装按钮
+                e.preventDefault();
+                deferredPrompt = e;
                 manualInstallButton.style.display = 'flex';
-                
+
                 manualInstallButton.addEventListener('click', () => {
-                    // 显示安装提示
-                    e.prompt();
-                    // 等待用户响应
-                    e.userChoice.then((choiceResult) => {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
                         if (choiceResult.outcome === 'accepted') {
                             console.log('用户通过手动按钮安装了应用');
                             manualInstallButton.style.display = 'none';
@@ -494,10 +492,27 @@
                     });
                 });
             });
-            
-            // 如果已经安装，则隐藏按钮
+
             window.addEventListener('appinstalled', () => {
                 manualInstallButton.style.display = 'none';
+            });
+        }
+
+        // 开启通知提醒按钮逻辑
+        const notifyButton = document.getElementById('notify-button');
+        if (notifyButton) {
+            notifyButton.addEventListener('click', () => {
+                if ('Notification' in window) {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            new Notification('通知已开启！');
+                        } else {
+                            console.log('用户拒绝了通知权限');
+                        }
+                    });
+                } else {
+                    console.log('浏览器不支持通知');
+                }
             });
         }
     </script>
