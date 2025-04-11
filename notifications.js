@@ -165,8 +165,8 @@ function sendTestNotification() {
   if (swRegistration) {
     const options = {
       body: '这是一条测试通知',
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-72x72.png',
+      icon: './icons/icon-192x192.png',
+      badge: './icons/icon-72x72.png',
       vibrate: [100, 50, 100],
       data: {
         dateOfArrival: Date.now(),

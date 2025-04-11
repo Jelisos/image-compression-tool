@@ -30,7 +30,7 @@
     <link rel="canonical" href="https://jelisos.github.io/image-compression-tool/">
     
     <!-- 添加Web App清单引用 -->
-    <link rel="manifest" href="app/manifest.json">
+    <link rel="manifest" href="manifest.json">
     
     <!-- 添加iOS支持的元标签 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -43,7 +43,7 @@
     <meta name="msapplication-TileColor" content="#4a90e2">
 
     <!-- PWA相关元标签 -->
-    <link rel="manifest" href="app/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4a90e2">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -268,7 +268,7 @@
                     <summary>我的图片会上传到服务器吗？</summary>
                     <p>不会。Jelisos是纯浏览器端应用，所有处理都在您的设备上完成，图片不会上传到任何服务器，保障您的隐私安全。</p>
                 </details>
-            </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -385,13 +385,13 @@
     <script src="libs/FileSaver.min.js" defer></script>
     <script src="script.js" defer></script>
     <script src="share.js" defer></script>
-    <script src="app/notifications.js" defer></script>
+    <script src="notifications.js" defer></script>
     
     <!-- 注册服务工作线程 -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./app/service-worker.js')
+                navigator.serviceWorker.register('./service-worker.js')
                     .then(registration => {
                         console.log('Service Worker 注册成功，作用域：', registration.scope);
                     })
@@ -503,14 +503,14 @@
     </script>
 
     <!-- 在其他脚本之后引用 -->
-    <script src="app/pwa-updater.js"></script>
+    <script src="pwa-updater.js"></script>
 
     <!-- 在页面底部添加这段调试代码 -->
     <script>
         console.log('PWA 检查开始...');
         
         // 检查 manifest.json
-        fetch('app/manifest.json')
+        fetch('manifest.json')
             .then(response => {
                 if (response.ok) {
                     console.log('✅ manifest.json 加载成功');
