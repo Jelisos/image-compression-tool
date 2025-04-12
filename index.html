@@ -248,13 +248,18 @@
             <div class="faq-section">
                 <h3>常见问题</h3>
                 <details>
+                    <summary>这款图片压缩工具：真的不需要联网也能用吗？</summary>
+                    <p>真的，比24k黄金还真。</p>
+                    &nbsp;
+                </details>
+                <details>
                     <summary>Jelisos图片压缩工具是否收费？</summary>
                     <p>Jelisos提供完全免费的图片压缩服务，您可以无限制使用，无需注册或付费。</p>
                     &nbsp;
                 </details>
                 <details>
                     <summary>如何批量压缩多张图片？</summary>
-                    <p>点击"选择图片"按钮上传多张图片，或切换到"批量模式"，即可同时处理多张图片并批量下载。</p>
+                    <p>切换到"批量模式"：点击"选择图片"按钮上传多张图片，即可同时处理多张图片并批量下载。</p>
                     &nbsp;
                 </details>
                 <details>
@@ -384,6 +389,7 @@
     <script src="script.js" defer></script>
     <script src="share.js" defer></script>
     <script src="notifications.js" defer></script>
+    <script src="pwa-buttons.js" defer></script>
     
     <!-- 注册服务工作线程 -->
     <script>
@@ -469,50 +475,7 @@
             pwaInstallContainer.hidden = true;
         });
 
-        // 手动安装按钮逻辑
-        const manualInstallButton = document.getElementById('manual-install-button');
-        let deferredPrompt; // 确保在全局范围内声明
-
-        if (manualInstallButton) {
-            manualInstallButton.style.display = 'flex'; // 确保按钮可见
-
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                manualInstallButton.style.display = 'flex';
-
-                manualInstallButton.addEventListener('click', () => {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('用户通过手动按钮安装了应用');
-                            manualInstallButton.style.display = 'none';
-                        }
-                        deferredPrompt = null;
-                    });
-                });
-            });
-
-            window.addEventListener('appinstalled', () => {
-                manualInstallButton.style.display = 'none';
-            });
-        }
-
-        // 开启通知提醒按钮逻辑
-        const notifyButton = document.getElementById('notify-button');
-        if (notifyButton) {
-            notifyButton.addEventListener('click', () => {
-                if ('Notification' in window) {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            new Notification('通知已开启！');
-                        } else {
-                            console.log('用户拒绝了通知权限');
-                        }
-                    });
-                } else {
-                    console.log('浏览器不支持通知');
-                }
+        // PWA按钮功能已移至pwa-buttons.js文件中处理
             });
         }
     </script>
