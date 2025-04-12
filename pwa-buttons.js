@@ -43,9 +43,21 @@ function setupManualInstallButton() {
     // 添加按钮点击事件
     manualInstallButton.addEventListener('click', (e) => {
         console.log('安装为应用按钮被点击');
-        // 如果没有安装提示事件，显示提示信息
+        // 如果没有安装提示事件，显示详细的提示信息
         if (!deferredPrompt) {
-            alert('您的浏览器不支持安装此应用，或者此应用已经安装。');
+            // 检查是否已安装
+            if (window.matchMedia('(display-mode: standalone)').matches || 
+                window.matchMedia('(display-mode: fullscreen)').matches || 
+                window.navigator.standalone === true) {
+                alert('此应用已经安装在您的设备上。');
+            } else if (!('serviceWorker' in navigator)) {
+                alert('您的浏览器不支持Service Worker，无法安装此应用。');
+            } else if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+                alert('PWA安装需要HTTPS连接，请使用HTTPS访问本站。');
+            } else {
+                alert('您的浏览器不支持安装此应用，或者安装条件不满足。请尝试使用Chrome、Edge或Safari最新版本。');
+                console.log('安装失败原因: beforeinstallprompt事件未触发');
+            }
             return;
         }
         
