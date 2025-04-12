@@ -9,7 +9,10 @@ document.addEventListener('DOMContentLoaded', initPWAButtons);
 // 初始化PWA相关按钮
 function initPWAButtons() {
     console.log('初始化PWA按钮功能...');
+    // 全局变量，用于存储安装提示事件
+    window.deferredPrompt = null;
     setupManualInstallButton();
+    setupPopupInstallPrompt();
     setupNotifyButton();
 }
 
@@ -26,25 +29,28 @@ function setupManualInstallButton() {
     // 确保按钮可见
     manualInstallButton.style.display = 'flex';
     
-    // 存储安装提示事件
-    let deferredPrompt;
-    
-    // 监听安装提示事件
+    // 监听安装提示事件 - 使用全局变量存储事件
     window.addEventListener('beforeinstallprompt', (e) => {
         console.log('捕获到beforeinstallprompt事件');
         // 阻止Chrome 67及更早版本自动显示安装提示
         e.preventDefault();
-        // 保存事件以便稍后触发
-        deferredPrompt = e;
+        // 保存事件以便稍后触发（全局变量）
+        window.deferredPrompt = e;
         // 确保按钮可见
         manualInstallButton.style.display = 'flex';
+        
+        // 显示弹窗式安装提示
+        const pwaInstallContainer = document.getElementById('pwa-install-container');
+        if (pwaInstallContainer) {
+            pwaInstallContainer.hidden = false;
+        }
     });
     
     // 添加按钮点击事件
     manualInstallButton.addEventListener('click', (e) => {
         console.log('安装为应用按钮被点击');
         // 如果没有安装提示事件，显示详细的提示信息
-        if (!deferredPrompt) {
+        if (!window.deferredPrompt) {
             // 检查是否已安装
             if (window.matchMedia('(display-mode: standalone)').matches || 
                 window.matchMedia('(display-mode: fullscreen)').matches || 
@@ -62,19 +68,24 @@ function setupManualInstallButton() {
         }
         
         // 显示安装提示
-        deferredPrompt.prompt();
+        window.deferredPrompt.prompt();
         
         // 等待用户响应
-        deferredPrompt.userChoice.then((choiceResult) => {
+        window.deferredPrompt.userChoice.then((choiceResult) => {
             if (choiceResult.outcome === 'accepted') {
                 console.log('用户接受安装');
                 // 隐藏按钮
                 manualInstallButton.style.display = 'none';
+                // 隐藏弹窗式安装提示
+                const pwaInstallContainer = document.getElementById('pwa-install-container');
+                if (pwaInstallContainer) {
+                    pwaInstallContainer.hidden = true;
+                }
             } else {
                 console.log('用户拒绝安装');
             }
             // 清除提示事件
-            deferredPrompt = null;
+            window.deferredPrompt = null;
         });
     });
     
@@ -83,6 +94,56 @@ function setupManualInstallButton() {
         console.log('应用已安装');
         // 隐藏按钮
         manualInstallButton.style.display = 'none';
+        // 隐藏弹窗式安装提示
+        const pwaInstallContainer = document.getElementById('pwa-install-container');
+        if (pwaInstallContainer) {
+            pwaInstallContainer.hidden = true;
+        }
+    });
+}
+
+// 设置弹窗式安装提示
+function setupPopupInstallPrompt() {
+    const pwaInstallContainer = document.getElementById('pwa-install-container');
+    const pwaInstallButton = document.getElementById('pwa-install-button');
+    
+    if (!pwaInstallContainer || !pwaInstallButton) {
+        console.log('未找到弹窗式安装提示元素');
+        return;
+    }
+    
+    console.log('找到弹窗式安装提示，设置事件监听器...');
+    
+    // 添加安装按钮点击事件
+    pwaInstallButton.addEventListener('click', () => {
+        console.log('弹窗安装按钮被点击');
+        // 隐藏安装提示
+        pwaInstallContainer.hidden = true;
+        
+        // 如果没有安装提示事件，显示提示信息
+        if (!window.deferredPrompt) {
+            console.error('安装提示事件不存在');
+            return;
+        }
+        
+        // 显示安装提示
+        window.deferredPrompt.prompt();
+        
+        // 等待用户响应
+        window.deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('用户接受安装');
+                // 隐藏手动安装按钮
+                const manualInstallButton = document.getElementById('manual-install-button');
+                if (manualInstallButton) {
+                    manualInstallButton.style.display = 'none';
+                }
+            } else {
+                console.log('用户拒绝安装');
+            }
+            // 清除提示事件
+            window.deferredPrompt = null;
+        });
     });
 }
 

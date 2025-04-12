@@ -433,49 +433,29 @@
 
     <!-- 加载脚本 -->
     <script>
-        // 处理PWA安装提示
-        let deferredPrompt;
+        // 注意：PWA安装按钮功能已移至pwa-buttons.js文件中处理
+        // 这里只处理弹窗式安装提示
         const pwaInstallContainer = document.getElementById('pwa-install-container');
         const pwaInstallButton = document.getElementById('pwa-install-button');
         const pwaInstallCancel = document.getElementById('pwa-install-cancel');
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            // 阻止Chrome 67及更早版本自动显示安装提示
-            e.preventDefault();
-            // 保存事件，以便稍后触发
-            deferredPrompt = e;
-            // 显示自定义安装提示
-            pwaInstallContainer.hidden = false;
-        });
-
-        pwaInstallButton.addEventListener('click', () => {
-            // 隐藏安装提示
-            pwaInstallContainer.hidden = true;
-            // 显示安装提示
-            deferredPrompt.prompt();
-            // 等待用户响应安装提示
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('用户接受了安装');
-                } else {
-                    console.log('用户取消了安装');
-                }
-                deferredPrompt = null;
-            });
-        });
-
-        pwaInstallCancel.addEventListener('click', () => {
-            // 隐藏安装提示
-            pwaInstallContainer.hidden = true;
-        });
-
-        // 检测PWA是否已安装
+        
+        // 隐藏安装提示的函数
+        function hidePwaInstallPrompt() {
+            if(pwaInstallContainer) {
+                pwaInstallContainer.hidden = true;
+            }
+        }
+        
+        // 取消按钮事件
+        if(pwaInstallCancel) {
+            pwaInstallCancel.addEventListener('click', hidePwaInstallPrompt);
+        }
+        
+        // 安装完成后隐藏提示
         window.addEventListener('appinstalled', (evt) => {
             console.log('应用已安装');
-            pwaInstallContainer.hidden = true;
+            hidePwaInstallPrompt();
         });
-
-        // PWA按钮功能已移至pwa-buttons.js文件中处理
             });
         }
     </script>
