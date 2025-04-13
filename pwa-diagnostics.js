@@ -36,6 +36,9 @@ function detectBrowser() {
     // 检测是否为移动设备
     const isMobile = /Mobile|Android|iPhone|iPad|iPod/.test(userAgent);
     
+    // 检测iOS设备
+    const isIOS = /iPhone|iPad|iPod/.test(userAgent);
+    
     // 检测浏览器类型
     if (/Edge|Edg/.test(userAgent)) {
         browserName = 'Edge';
@@ -49,6 +52,9 @@ function detectBrowser() {
     } else if (/Safari/.test(userAgent) && !/Chrome/.test(userAgent)) {
         browserName = 'Safari';
         isCompatible = /Version\/1[3-9]/.test(userAgent); // Safari 13+支持PWA
+    } else if (/HuaweiBrowser/.test(userAgent)) {
+        browserName = '华为浏览器';
+        isCompatible = true; // 华为浏览器在移动端支持PWA
     } else if (/Quark/.test(userAgent)) {
         browserName = '夸克浏览器';
         isCompatible = false; // 夸克浏览器PWA支持有限
@@ -64,6 +70,15 @@ function detectBrowser() {
     } else if (/Baidu/.test(userAgent)) {
         browserName = '百度浏览器';
         isCompatible = false; // 百度浏览器PWA支持有限
+    } else if (/MiuiBrowser/.test(userAgent)) {
+        browserName = '小米浏览器';
+        isCompatible = false; // 小米浏览器PWA支持有限
+    } else if (/HeyTapBrowser/.test(userAgent)) {
+        browserName = 'OPPO浏览器';
+        isCompatible = false; // OPPO浏览器PWA支持有限
+    } else if (/VivoBrowser/.test(userAgent)) {
+        browserName = 'vivo浏览器';
+        isCompatible = false; // vivo浏览器PWA支持有限
     } else {
         browserName = '未知浏览器';
         isCompatible = false;
@@ -84,6 +99,7 @@ function detectBrowser() {
         version: browserVersion,
         isCompatible: isCompatible,
         isMobile: isMobile,
+        isIOS: isIOS,
         supportsPWA: isCompatible && 'serviceWorker' in navigator && 'PushManager' in window
     };
     
@@ -324,18 +340,39 @@ function updateDiagnosticsUI() {
         compatTip.style.margin = '5px 0';
         compatTip.style.fontSize = '0.9em';
         
-        if (name === '夸克浏览器' || name === 'UC浏览器' || name === 'QQ浏览器' || name === '百度浏览器') {
-            compatTip.innerHTML = `<strong>提示:</strong> ${name}对PWA支持有限，建议使用Chrome浏览器安装。`;
-        } else if (name === '微信浏览器') {
-            compatTip.innerHTML = '<strong>提示:</strong> 微信内置浏览器不支持PWA安装，请使用系统浏览器访问。';
-        } else if (name === 'Safari' && version && parseFloat(version) < 13) {
-            compatTip.innerHTML = '<strong>提示:</strong> 当前Safari版本不完全支持PWA，请更新至Safari 13或更高版本。';
+        if (isMobile) {
+            // 移动端设备推荐
+            if (pwaDiagnostics.browserInfo.isIOS) {
+                compatTip.innerHTML = '<strong>提示:</strong> 在iOS设备上，请使用Safari浏览器并通过"添加到主屏幕"功能安装PWA应用。';
+            } else if (name === '微信浏览器') {
+                compatTip.innerHTML = '<strong>提示:</strong> 微信内置浏览器不支持PWA安装，请使用<strong>华为浏览器</strong>或系统浏览器访问。';
+            } else if (name === '夸克浏览器' || name === 'UC浏览器' || name === 'QQ浏览器' || name === '百度浏览器' ||
+                name === '小米浏览器' || name === 'OPPO浏览器' || name === 'vivo浏览器') {
+                compatTip.innerHTML = `<strong>提示:</strong> ${name}对PWA支持有限，建议使用<strong>华为浏览器</strong>或Chrome浏览器安装。`;
+            } else {
+                compatTip.innerHTML = '<strong>提示:</strong> 在Android设备上，推荐使用<strong>华为浏览器</strong>安装PWA应用以获得最佳体验。';
+            }
         } else {
-            compatTip.innerHTML = '<strong>提示:</strong> 当前浏览器可能不完全支持PWA，建议使用Chrome、Edge或Firefox。';
+            // PC端设备推荐
+            if (name === 'Safari' && version && parseFloat(version) < 13) {
+                compatTip.innerHTML = '<strong>提示:</strong> 当前Safari版本不完全支持PWA，请更新至Safari 13或更高版本，或使用<strong>Chrome浏览器</strong>。';
+            } else {
+                compatTip.innerHTML = '<strong>提示:</strong> 在PC端，推荐使用<strong>Chrome浏览器</strong>安装PWA应用以获得最佳体验。';
+            }
         }
         
         browserInfo.appendChild(compatTip);
     }
+    
+    // 添加iOS/macOS PWA支持信息
+    const iosSupportInfo = document.createElement('p');
+    iosSupportInfo.style.margin = '5px 0';
+    iosSupportInfo.style.fontSize = '0.9em';
+    iosSupportInfo.style.backgroundColor = '#f0f8ff';
+    iosSupportInfo.style.padding = '5px';
+    iosSupportInfo.style.borderRadius = '3px';
+    iosSupportInfo.innerHTML = '<strong>苹果设备支持:</strong> PWA应用适用于iOS 13+和macOS的Safari浏览器，安装方法是打开Safari，访问网站后点击分享按钮，然后选择"添加到主屏幕"。';
+    browserInfo.appendChild(iosSupportInfo);
     
     browserInfoSection.appendChild(browserInfo);
     content.appendChild(browserInfoSection);
@@ -403,9 +440,17 @@ function updateDiagnosticsUI() {
         // 根据不同问题提供解决方案
         if (!pwaDiagnostics.browserInfo.isCompatible) {
             const browserSolution = document.createElement('li');
-            browserSolution.innerHTML = '使用 <strong>Chrome</strong>、<strong>Edge</strong> 或 <strong>Firefox</strong> 浏览器访问本站。';
+            
+            if (pwaDiagnostics.browserInfo.isMobile) {
+                if (pwaDiagnostics.browserInfo.isIOS) {
+                    browserSolution.innerHTML = '使用 <strong>Safari</strong> 浏览器访问本站，并通过"添加到主屏幕"功能安装PWA应用。';
+                } else {
+                    browserSolution.innerHTML = '使用 <strong>华为浏览器</strong> 或 <strong>Chrome</strong> 浏览器访问本站以获得最佳PWA体验。';
+                }
+            } else {
+                browserSolution.innerHTML = '使用 <strong>Chrome</strong> 浏览器访问本站以获得最佳PWA体验。';
+            }
             solutionList.appendChild(browserSolution);
-        }
         
         if (!pwaDiagnostics.isHttps && window.location.hostname !== 'localhost') {
             const httpsSolution = document.createElement('li');
