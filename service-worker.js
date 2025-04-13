@@ -84,18 +84,41 @@ self.addEventListener('fetch', event => {
 
 // 安装事件：预缓存所有静态资源
 self.addEventListener('install', event => {
+  console.log('[Service Worker] 安装中...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('缓存已打开');
-        return cache.addAll(CACHE_ASSETS);
+        console.log('[Service Worker] 缓存已打开，开始缓存资源');
+        return cache.addAll(CACHE_ASSETS).catch(error => {
+          console.error('[Service Worker] 缓存资源失败:', error);
+          // 即使部分资源缓存失败，也继续安装过程
+          return Promise.resolve();
+        });
       })
-      .then(() => self.skipWaiting()) // 强制新安装的 Service Worker 立即激活
+      .then(() => {
+        console.log('[Service Worker] 安装完成，跳过等待');
+        return self.skipWaiting(); // 强制新安装的 Service Worker 立即激活
+      })
   );
+});
+
+// 添加消息处理功能，处理来自页面的消息
+self.addEventListener('message', event => {
+  console.log('[Service Worker] 收到消息:', event.data);
+  
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[Service Worker] 跳过等待，立即激活');
+    self.skipWaiting();
+  }
 });
 
 // 激活事件：清理旧缓存
 self.addEventListener('activate', event => {
+  console.log('[Service Worker] 激活中...');
+  
+  // 立即接管页面
+  event.waitUntil(self.clients.claim());
+  
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -225,4 +248,4 @@ self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
-}); 
+});

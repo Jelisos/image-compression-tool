@@ -19,7 +19,7 @@ function initializeNotifications() {
   if ('serviceWorker' in navigator && 'PushManager' in window) {
     console.log('Service Worker和Push通知支持');
     
-    navigator.serviceWorker.register('./service-worker.js')
+    navigator.serviceWorker.register('./service-worker.js', {scope: './'}) // 添加scope参数
       .then(function(swReg) {
         console.log('Service Worker已注册', swReg);
         swRegistration = swReg;
@@ -191,4 +191,4 @@ function sendTestNotification() {
 }
 
 // 初始化推送通知
-window.addEventListener('load', initializeNotifications); 
+window.addEventListener('load', initializeNotifications);

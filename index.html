@@ -45,10 +45,11 @@
     <!-- PWA相关元标签 -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4a90e2">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="图片压缩">
-    <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+    <link rel="apple-touch-icon" href="./icons/icon-152x152.png">
     
     <!-- 关键 CSS（内联） -->
     <style>
@@ -456,8 +457,6 @@
             console.log('应用已安装');
             hidePwaInstallPrompt();
         });
-            });
-        }
     </script>
 
     <!-- 在其他脚本之后引用 -->
@@ -483,6 +482,43 @@
         // 检查 service worker 支持
         if ('serviceWorker' in navigator) {
             console.log('✅ 浏览器支持 Service Worker');
+            // 尝试注册Service Worker
+            navigator.serviceWorker.register('./service-worker.js', {scope: './'}) // 添加scope参数
+                .then(function(registration) {
+                    console.log('Service Worker注册成功，scope是: ', registration.scope);
+                    
+                    // 检查Service Worker状态
+                    if (registration.installing) {
+                        console.log('Service Worker正在安装');
+                        const sw = registration.installing;
+                        sw.addEventListener('statechange', function() {
+                            console.log('Service Worker状态变化:', sw.state);
+                        });
+                    } else if (registration.waiting) {
+                        console.log('Service Worker等待激活');
+                    } else if (registration.active) {
+                        console.log('Service Worker已激活');
+                    }
+                    
+                    // 检查是否可以触发beforeinstallprompt事件
+                    if (!window.deferredPrompt) {
+                        console.log('等待beforeinstallprompt事件触发...');
+                        // 尝试手动触发PWA安装条件检查
+                        setTimeout(function() {
+                            if (!window.deferredPrompt) {
+                                console.log('30秒内未捕获到beforeinstallprompt事件，可能需要满足更多PWA安装条件');
+                            }
+                        }, 30000);
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Service Worker 注册失败：', error);
+                    // 尝试使用不同的scope重新注册
+                    console.log('尝试使用不同的scope重新注册Service Worker...');
+                    navigator.serviceWorker.register('./service-worker.js')
+                        .then(reg => console.log('Service Worker使用默认scope注册成功:', reg.scope))
+                        .catch(err => console.error('Service Worker使用默认scope注册仍然失败:', err));
+                });
         } else {
             console.error('❌ 浏览器不支持 Service Worker');
         }

@@ -11,9 +11,77 @@ function initPWAButtons() {
     console.log('初始化PWA按钮功能...');
     // 全局变量，用于存储安装提示事件
     window.deferredPrompt = null;
+    // 检查PWA安装条件
+    checkPWAInstallConditions();
     setupManualInstallButton();
     setupPopupInstallPrompt();
     setupNotifyButton();
+}
+
+// 检查PWA安装条件
+function checkPWAInstallConditions() {
+    console.log('检查PWA安装条件...');
+    
+    // 检查Service Worker支持
+    if (!('serviceWorker' in navigator)) {
+        console.error('浏览器不支持Service Worker');
+        return false;
+    }
+    
+    // 检查HTTPS或localhost
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+        console.error('PWA安装需要HTTPS连接');
+        return false;
+    }
+    
+    // 检查manifest.json
+    fetch('./manifest.json')
+        .then(response => {
+            if (!response.ok) {
+                console.error('manifest.json加载失败');
+                return false;
+            }
+            console.log('manifest.json加载成功');
+            return true;
+        })
+        .catch(error => {
+            console.error('manifest.json加载错误:', error);
+            return false;
+        });
+    
+    // 检查Service Worker注册
+    navigator.serviceWorker.getRegistration()
+        .then(registration => {
+            if (!registration) {
+                console.error('Service Worker未注册');
+                // 尝试注册Service Worker
+                registerServiceWorker();
+                return false;
+            }
+            console.log('Service Worker已注册，scope是:', registration.scope);
+            return true;
+        })
+        .catch(error => {
+            console.error('检查Service Worker注册状态失败:', error);
+            return false;
+        });
+    
+    return true;
+}
+
+// 注册Service Worker
+function registerServiceWorker() {
+    navigator.serviceWorker.register('./service-worker.js', {scope: './'})
+        .then(registration => {
+            console.log('Service Worker注册成功，scope是:', registration.scope);
+        })
+        .catch(error => {
+            console.error('Service Worker注册失败:', error);
+            // 尝试使用不同的scope
+            navigator.serviceWorker.register('./service-worker.js')
+                .then(reg => console.log('Service Worker使用默认scope注册成功:', reg.scope))
+                .catch(err => console.error('Service Worker注册仍然失败:', err));
+        });
 }
 
 // 设置手动安装按钮
@@ -61,8 +129,25 @@ function setupManualInstallButton() {
             } else if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
                 alert('PWA安装需要HTTPS连接，请使用HTTPS访问本站。');
             } else {
-                alert('您的浏览器不支持安装此应用，或者安装条件不满足。请尝试使用Chrome、Edge或Safari最新版本。');
-                console.log('安装失败原因: beforeinstallprompt事件未触发');
+                // 检查Service Worker注册状态
+                navigator.serviceWorker.getRegistration('./service-worker.js')
+                    .then(registration => {
+                        if (!registration) {
+                            alert('Service Worker未正确注册，请刷新页面后重试。');
+                            console.error('安装失败原因: Service Worker未注册');
+                        } else {
+                            alert('您的浏览器不支持安装此应用，或者安装条件不满足。请尝试使用Chrome、Edge或Safari最新版本。');
+                            console.log('安装失败原因: beforeinstallprompt事件未触发，但Service Worker已注册');
+                            // 尝试重新注册Service Worker
+                            navigator.serviceWorker.register('./service-worker.js', {scope: './'})
+                                .then(reg => console.log('Service Worker重新注册成功:', reg.scope))
+                                .catch(err => console.error('Service Worker重新注册失败:', err));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('检查Service Worker注册状态失败:', error);
+                        alert('检查PWA安装条件时出错，请刷新页面后重试。');
+                    });
             }
             return;
         }
