@@ -14,8 +14,10 @@ function initPWAButtons() {
     // 检查PWA安装条件
     checkPWAInstallConditions();
     setupManualInstallButton();
-    setupPopupInstallPrompt();
-    setupNotifyButton();
+    // 移除弹窗式安装提示和通知功能
+    // setupPopupInstallPrompt();
+    // 通知功能已移除
+    // setupNotifyButton();
 }
 
 // 检查PWA安装条件
@@ -125,17 +127,17 @@ function setupManualInstallButton() {
         // 隐藏诊断按钮，因为安装条件已满足
         if (diagButton) diagButton.style.display = 'none';
         
-        // 显示弹窗式安装提示
-        const pwaInstallContainer = document.getElementById('pwa-install-container');
-        if (pwaInstallContainer) {
-            pwaInstallContainer.hidden = false;
-        }
+        // 移除弹窗式安装提示的显示
+        // const pwaInstallContainer = document.getElementById('pwa-install-container');
+        // if (pwaInstallContainer) {
+        //     pwaInstallContainer.hidden = false;
+        // }
     });
     
     // 添加按钮点击事件
     manualInstallButton.addEventListener('click', (e) => {
         console.log('安装为应用按钮被点击');
-        // 如果没有安装提示事件，显示详细的提示信息
+        // 如果没有安装提示事件，显示简化版的安装指南
         if (!window.deferredPrompt) {
             // 检查是否已安装
             if (window.matchMedia('(display-mode: standalone)').matches || 
@@ -147,28 +149,39 @@ function setupManualInstallButton() {
             } else if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
                 alert('PWA安装需要HTTPS连接，请使用HTTPS访问本站。');
             } else {
-                // 检查Service Worker注册状态
-                navigator.serviceWorker.getRegistration('./service-worker.js')
-                    .then(registration => {
-                        if (!registration) {
-                            alert('Service Worker未正确注册，请刷新页面后重试。');
-                            console.error('安装失败原因: Service Worker未注册');
-                        } else {
-                            alert('您的浏览器不支持安装此应用，或者安装条件不满足。请点击"PWA诊断"按钮查看详细信息。');
-                            console.log('安装失败原因: beforeinstallprompt事件未触发，但Service Worker已注册');
-                            // 显示诊断按钮
-                            const diagButton = document.getElementById('pwa-diag-button');
-                            if (diagButton) diagButton.style.display = 'inline-block';
-                            // 尝试重新注册Service Worker
-                            navigator.serviceWorker.register('./service-worker.js', {scope: './'})
-                                .then(reg => console.log('Service Worker重新注册成功:', reg.scope))
-                                .catch(err => console.error('Service Worker重新注册失败:', err));
-                        }
-                    })
-                    .catch(error => {
-                        console.error('检查Service Worker注册状态失败:', error);
-                        alert('检查PWA安装条件时出错，请刷新页面后重试。');
-                    });
+                // 显示简化版的安装指南
+                const installGuide = document.createElement('div');
+                installGuide.style.position = 'fixed';
+                installGuide.style.top = '0';
+                installGuide.style.left = '0';
+                installGuide.style.width = '100%';
+                installGuide.style.height = '100%';
+                installGuide.style.backgroundColor = 'rgba(0,0,0,0.8)';
+                installGuide.style.zIndex = '10000';
+                installGuide.style.display = 'flex';
+                installGuide.style.flexDirection = 'column';
+                installGuide.style.justifyContent = 'center';
+                installGuide.style.alignItems = 'center';
+                installGuide.style.color = 'white';
+                installGuide.style.padding = '20px';
+                installGuide.style.boxSizing = 'border-box';
+                installGuide.style.textAlign = 'center';
+                
+                installGuide.innerHTML = `
+                    <div style="background-color: #4a90e2; padding: 20px; border-radius: 10px; max-width: 90%; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                        <h2 style="margin-top: 0;">安装到主屏幕</h2>
+                        <p style="margin: 15px 0;">PC端推荐用谷歌浏览器，手机端推荐用华为浏览器</p>
+                        <p style="margin: 15px 0;">安装后，您可以从主屏幕直接启动应用，享受更好的体验！</p>
+                        <button id="close-install-guide" style="background-color: white; color: #4a90e2; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; margin-top: 10px;">知道了</button>
+                    </div>
+                `;
+                
+                document.body.appendChild(installGuide);
+                
+                // 添加关闭按钮事件
+                document.getElementById('close-install-guide').addEventListener('click', function() {
+                    installGuide.remove();
+                });
             }
             return;
         }
@@ -208,50 +221,12 @@ function setupManualInstallButton() {
     });
 }
 
-// 设置弹窗式安装提示
+// 弹窗式安装提示功能已移除
+/* 
 function setupPopupInstallPrompt() {
-    const pwaInstallContainer = document.getElementById('pwa-install-container');
-    const pwaInstallButton = document.getElementById('pwa-install-button');
-    
-    if (!pwaInstallContainer || !pwaInstallButton) {
-        console.log('未找到弹窗式安装提示元素');
-        return;
-    }
-    
-    console.log('找到弹窗式安装提示，设置事件监听器...');
-    
-    // 添加安装按钮点击事件
-    pwaInstallButton.addEventListener('click', () => {
-        console.log('弹窗安装按钮被点击');
-        // 隐藏安装提示
-        pwaInstallContainer.hidden = true;
-        
-        // 如果没有安装提示事件，显示提示信息
-        if (!window.deferredPrompt) {
-            console.error('安装提示事件不存在');
-            return;
-        }
-        
-        // 显示安装提示
-        window.deferredPrompt.prompt();
-        
-        // 等待用户响应
-        window.deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-                console.log('用户接受安装');
-                // 隐藏手动安装按钮
-                const manualInstallButton = document.getElementById('manual-install-button');
-                if (manualInstallButton) {
-                    manualInstallButton.style.display = 'none';
-                }
-            } else {
-                console.log('用户拒绝安装');
-            }
-            // 清除提示事件
-            window.deferredPrompt = null;
-        });
-    });
+    // 此功能已根据需求移除
 }
+*/
 
 // 设置通知提醒按钮
 function setupNotifyButton() {

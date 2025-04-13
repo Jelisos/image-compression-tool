@@ -30,45 +30,41 @@ function updateOnlineStatus(isOnlineParam) {
   // 使用参数或当前网络状态
   const isOnline = isOnlineParam !== undefined ? isOnlineParam : navigator.onLine;
   
-  const statusIndicator = document.createElement('div');
-  statusIndicator.id = 'network-status';
-  statusIndicator.style.position = 'fixed';
-  statusIndicator.style.bottom = '20px';
-  statusIndicator.style.right = '20px';
-  statusIndicator.style.padding = '8px 16px';
-  statusIndicator.style.borderRadius = '4px';
-  statusIndicator.style.fontSize = '14px';
-  statusIndicator.style.fontWeight = 'bold';
-  statusIndicator.style.zIndex = '9999';
-  statusIndicator.style.transition = 'opacity 0.5s';
+  // 创建或获取网络状态指示器
+  let statusIndicator = document.getElementById('network-status');
   
+  if (!statusIndicator) {
+    statusIndicator = document.createElement('div');
+    statusIndicator.id = 'network-status';
+    
+    // 固定样式 - 放置在底部版权信息上方
+    statusIndicator.style.width = '100%';
+    statusIndicator.style.textAlign = 'center';
+    statusIndicator.style.padding = '8px 0';
+    statusIndicator.style.fontSize = '14px';
+    statusIndicator.style.fontWeight = 'bold';
+    statusIndicator.style.zIndex = '9998';
+    
+    // 找到footer元素，将状态指示器插入到footer之前
+    const footer = document.querySelector('.footer');
+    if (footer) {
+      footer.parentNode.insertBefore(statusIndicator, footer);
+    } else {
+      // 如果找不到footer，则添加到body末尾
+      document.body.appendChild(statusIndicator);
+    }
+  }
+  
+  // 根据网络状态更新内容和样式
   if (isOnline) {
     statusIndicator.textContent = '已恢复在线状态';
     statusIndicator.style.backgroundColor = '#4CAF50';
     statusIndicator.style.color = 'white';
-    
-    // 三秒后自动隐藏
-    setTimeout(() => {
-      statusIndicator.style.opacity = '0';
-      setTimeout(() => {
-        if (statusIndicator.parentNode) {
-          statusIndicator.parentNode.removeChild(statusIndicator);
-        }
-      }, 500);
-    }, 3000);
   } else {
     statusIndicator.textContent = '离线模式 - 部分功能受限';
     statusIndicator.style.backgroundColor = '#FF9800';
     statusIndicator.style.color = 'white';
   }
-  
-  // 移除旧的状态指示器
-  const oldIndicator = document.getElementById('network-status');
-  if (oldIndicator) {
-    oldIndicator.parentNode.removeChild(oldIndicator);
-  }
-  
-  document.body.appendChild(statusIndicator);
 }
 
 // 页面加载完成后初始化

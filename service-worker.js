@@ -15,7 +15,7 @@ const CACHE_ASSETS = [
   './share.css',
   './script.js',
   './share.js',
-  './notifications.js',
+  // './notifications.js', // 通知功能已移除
   './pwa-updater.js',
   './network-status.js',
   './pwa-buttons.js',
@@ -485,37 +485,17 @@ function handleOfflineResponse(request) {
   });
 }
 
-// 推送通知事件处理
+// 推送通知事件处理和通知点击事件处理已移除
+// 通知功能已被移除，以下代码已注释
+/*
 self.addEventListener('push', event => {
-  const title = '图片压缩工具';
-  const options = {
-    body: event.data ? event.data.text() : '有新消息',
-    icon: './icons/icon-192x192.png',
-    badge: './icons/icon-72x72.png'
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
+  // 推送通知代码已移除
 });
 
-// 处理通知点击事件
 self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  
-  // 尝试查找已打开的窗口
-  event.waitUntil(
-    clients.matchAll({type: 'window'}).then(clientList => {
-      // 检查是否已经有打开的窗口
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      // 如果没有打开的窗口，则打开一个新窗口
-      // 使用相对路径，而不是硬编码的URL
-      return clients.openWindow('./index.html');
-    })
-  );
+  // 通知点击事件代码已移除
 });
+*/
 
 // 向所有客户端发送网络状态更新的消息
 function notifyClientsAboutNetworkStatus(isOnline) {
