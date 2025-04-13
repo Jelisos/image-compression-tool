@@ -1,6 +1,7 @@
 /**
  * PWA 安装诊断工具
  * 用于检测PWA安装条件并提供详细诊断信息
+ * 增强版：添加浏览器兼容性检测
  */
 
 // 初始化诊断结果对象
@@ -15,12 +16,93 @@ let pwaDiagnostics = {
     isStandalone: false,
     failureReason: '',
     iconsMissing: [],
-    manifestErrors: []
+    manifestErrors: [],
+    browserInfo: {
+        name: '',
+        version: '',
+        isCompatible: false,
+        isMobile: false,
+        supportsPWA: false
+    }
 };
+
+// 检测浏览器类型和兼容性
+function detectBrowser() {
+    const userAgent = navigator.userAgent;
+    let browserName = '';
+    let browserVersion = '';
+    let isCompatible = false;
+    
+    // 检测是否为移动设备
+    const isMobile = /Mobile|Android|iPhone|iPad|iPod/.test(userAgent);
+    
+    // 检测浏览器类型
+    if (/Edge|Edg/.test(userAgent)) {
+        browserName = 'Edge';
+        isCompatible = true; // Edge支持PWA
+    } else if (/Firefox/.test(userAgent)) {
+        browserName = 'Firefox';
+        isCompatible = true; // Firefox支持PWA，但有限制
+    } else if (/Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor)) {
+        browserName = 'Chrome';
+        isCompatible = true; // Chrome完全支持PWA
+    } else if (/Safari/.test(userAgent) && !/Chrome/.test(userAgent)) {
+        browserName = 'Safari';
+        isCompatible = /Version\/1[3-9]/.test(userAgent); // Safari 13+支持PWA
+    } else if (/Quark/.test(userAgent)) {
+        browserName = '夸克浏览器';
+        isCompatible = false; // 夸克浏览器PWA支持有限
+    } else if (/UCBrowser/.test(userAgent)) {
+        browserName = 'UC浏览器';
+        isCompatible = false; // UC浏览器PWA支持有限
+    } else if (/MicroMessenger/.test(userAgent)) {
+        browserName = '微信浏览器';
+        isCompatible = false; // 微信内置浏览器不支持PWA
+    } else if (/QQBrowser/.test(userAgent)) {
+        browserName = 'QQ浏览器';
+        isCompatible = false; // QQ浏览器PWA支持有限
+    } else if (/Baidu/.test(userAgent)) {
+        browserName = '百度浏览器';
+        isCompatible = false; // 百度浏览器PWA支持有限
+    } else {
+        browserName = '未知浏览器';
+        isCompatible = false;
+    }
+    
+    // 提取版本号
+    const versionMatch = userAgent.match(new RegExp(browserName + '\/([0-9\.]+)'))
+                      || userAgent.match(/Version\/([0-9\.]+)/)
+                      || userAgent.match(/(?:Chrome|Firefox|Safari)\/([0-9\.]+)/);
+    
+    if (versionMatch && versionMatch[1]) {
+        browserVersion = versionMatch[1];
+    }
+    
+    // 更新诊断结果
+    pwaDiagnostics.browserInfo = {
+        name: browserName,
+        version: browserVersion,
+        isCompatible: isCompatible,
+        isMobile: isMobile,
+        supportsPWA: isCompatible && 'serviceWorker' in navigator && 'PushManager' in window
+    };
+    
+    console.log('🔍 浏览器检测结果:', pwaDiagnostics.browserInfo);
+    
+    // 如果浏览器不兼容，更新失败原因
+    if (!isCompatible && !pwaDiagnostics.failureReason) {
+        pwaDiagnostics.failureReason = `当前浏览器(${browserName})对PWA支持有限`;  
+    }
+    
+    return pwaDiagnostics.browserInfo;
+}
 
 // 运行完整的PWA诊断
 function runPWADiagnostics() {
     console.log('🔍 运行PWA安装诊断...');
+    
+    // 检测浏览器兼容性
+    detectBrowser();
     
     // 检查是否为HTTPS
     pwaDiagnostics.isHttps = window.location.protocol === 'https:' || 
@@ -199,6 +281,65 @@ function updateDiagnosticsUI() {
     const content = document.getElementById('pwa-diagnostics-content');
     content.innerHTML = '';
     
+    // 添加浏览器信息部分
+    const browserInfoSection = document.createElement('div');
+    browserInfoSection.style.marginBottom = '15px';
+    browserInfoSection.style.padding = '10px';
+    browserInfoSection.style.backgroundColor = '#f5f5f5';
+    browserInfoSection.style.borderRadius = '5px';
+    
+    // 浏览器信息标题
+    const browserTitle = document.createElement('h4');
+    browserTitle.textContent = '浏览器兼容性';
+    browserTitle.style.margin = '0 0 10px 0';
+    browserInfoSection.appendChild(browserTitle);
+    
+    // 浏览器信息内容
+    const browserInfo = document.createElement('div');
+    const { name, version, isCompatible, isMobile, supportsPWA } = pwaDiagnostics.browserInfo;
+    
+    // 浏览器名称和版本
+    const browserNameElem = document.createElement('p');
+    browserNameElem.innerHTML = `<strong>浏览器:</strong> ${name} ${version}`;
+    browserNameElem.style.margin = '5px 0';
+    browserInfo.appendChild(browserNameElem);
+    
+    // 设备类型
+    const deviceTypeElem = document.createElement('p');
+    deviceTypeElem.innerHTML = `<strong>设备类型:</strong> ${isMobile ? '移动设备' : '桌面设备'}`;
+    deviceTypeElem.style.margin = '5px 0';
+    browserInfo.appendChild(deviceTypeElem);
+    
+    // PWA兼容性状态
+    const compatibilityElem = document.createElement('p');
+    compatibilityElem.innerHTML = `<strong>PWA兼容性:</strong> ${isCompatible ? '支持' : '不完全支持'}`;
+    compatibilityElem.style.color = isCompatible ? 'green' : 'red';
+    compatibilityElem.style.margin = '5px 0';
+    browserInfo.appendChild(compatibilityElem);
+    
+    // 添加兼容性提示
+    if (!isCompatible) {
+        const compatTip = document.createElement('p');
+        compatTip.style.color = 'red';
+        compatTip.style.margin = '5px 0';
+        compatTip.style.fontSize = '0.9em';
+        
+        if (name === '夸克浏览器' || name === 'UC浏览器' || name === 'QQ浏览器' || name === '百度浏览器') {
+            compatTip.innerHTML = `<strong>提示:</strong> ${name}对PWA支持有限，建议使用Chrome浏览器安装。`;
+        } else if (name === '微信浏览器') {
+            compatTip.innerHTML = '<strong>提示:</strong> 微信内置浏览器不支持PWA安装，请使用系统浏览器访问。';
+        } else if (name === 'Safari' && version && parseFloat(version) < 13) {
+            compatTip.innerHTML = '<strong>提示:</strong> 当前Safari版本不完全支持PWA，请更新至Safari 13或更高版本。';
+        } else {
+            compatTip.innerHTML = '<strong>提示:</strong> 当前浏览器可能不完全支持PWA，建议使用Chrome、Edge或Firefox。';
+        }
+        
+        browserInfo.appendChild(compatTip);
+    }
+    
+    browserInfoSection.appendChild(browserInfo);
+    content.appendChild(browserInfoSection);
+    
     // 创建诊断结果列表
     const list = document.createElement('ul');
     list.style.paddingLeft = '20px';
@@ -240,6 +381,60 @@ function updateDiagnosticsUI() {
     }
     
     content.appendChild(list);
+    
+    // 添加解决方案部分
+    if (!pwaDiagnostics.browserInfo.isCompatible || pwaDiagnostics.failureReason) {
+        const solutionSection = document.createElement('div');
+        solutionSection.style.marginTop = '15px';
+        solutionSection.style.padding = '10px';
+        solutionSection.style.backgroundColor = '#e6f7ff';
+        solutionSection.style.borderRadius = '5px';
+        solutionSection.style.borderLeft = '4px solid #1890ff';
+        
+        const solutionTitle = document.createElement('h4');
+        solutionTitle.textContent = '解决方案';
+        solutionTitle.style.margin = '0 0 10px 0';
+        solutionSection.appendChild(solutionTitle);
+        
+        const solutionList = document.createElement('ul');
+        solutionList.style.paddingLeft = '20px';
+        solutionList.style.margin = '0';
+        
+        // 根据不同问题提供解决方案
+        if (!pwaDiagnostics.browserInfo.isCompatible) {
+            const browserSolution = document.createElement('li');
+            browserSolution.innerHTML = '使用 <strong>Chrome</strong>、<strong>Edge</strong> 或 <strong>Firefox</strong> 浏览器访问本站。';
+            solutionList.appendChild(browserSolution);
+        }
+        
+        if (!pwaDiagnostics.isHttps && window.location.hostname !== 'localhost') {
+            const httpsSolution = document.createElement('li');
+            httpsSolution.innerHTML = '确保通过 <strong>HTTPS</strong> 访问本站。';
+            solutionList.appendChild(httpsSolution);
+        }
+        
+        if (!pwaDiagnostics.hasServiceWorker || !pwaDiagnostics.serviceWorkerActive) {
+            const swSolution = document.createElement('li');
+            swSolution.innerHTML = '刷新页面，重新注册Service Worker。';
+            solutionList.appendChild(swSolution);
+            
+            // 添加刷新按钮
+            const reloadButton = document.createElement('button');
+            reloadButton.textContent = '刷新页面';
+            reloadButton.style.marginTop = '10px';
+            reloadButton.style.padding = '5px 10px';
+            reloadButton.style.backgroundColor = '#1890ff';
+            reloadButton.style.color = 'white';
+            reloadButton.style.border = 'none';
+            reloadButton.style.borderRadius = '3px';
+            reloadButton.style.cursor = 'pointer';
+            reloadButton.onclick = () => window.location.reload();
+            solutionSection.appendChild(reloadButton);
+        }
+        
+        solutionSection.appendChild(solutionList);
+        content.appendChild(solutionSection);
+    }
     
     // 添加刷新按钮
     const refreshButton = document.createElement('button');
