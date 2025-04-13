@@ -1,5 +1,5 @@
 // 缓存名称和版本号（更新版本号可以强制更新缓存）
-const CACHE_NAME = 'jelisos-image-compressor-v1';
+const CACHE_NAME = 'jelisos-image-compressor-v2';
 
 // 需要缓存的资源列表 - 确保路径以 './' 开头使用相对路径
 const CACHE_ASSETS = [

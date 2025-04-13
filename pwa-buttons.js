@@ -97,6 +97,22 @@ function setupManualInstallButton() {
     // 确保按钮可见
     manualInstallButton.style.display = 'flex';
     
+    // 添加诊断按钮
+    const diagButton = document.createElement('button');
+    diagButton.id = 'pwa-diag-button';
+    diagButton.textContent = 'PWA诊断';
+    diagButton.className = 'secondary-button';
+    diagButton.style.marginLeft = '10px';
+    diagButton.style.display = 'none'; // 默认隐藏，只在安装失败时显示
+    diagButton.addEventListener('click', () => {
+        if (typeof window.showPWADiagnostics === 'function') {
+            window.showPWADiagnostics();
+        } else {
+            alert('PWA诊断工具未加载，请刷新页面后重试');
+        }
+    });
+    manualInstallButton.parentNode.appendChild(diagButton);
+    
     // 监听安装提示事件 - 使用全局变量存储事件
     window.addEventListener('beforeinstallprompt', (e) => {
         console.log('捕获到beforeinstallprompt事件');
@@ -106,6 +122,8 @@ function setupManualInstallButton() {
         window.deferredPrompt = e;
         // 确保按钮可见
         manualInstallButton.style.display = 'flex';
+        // 隐藏诊断按钮，因为安装条件已满足
+        if (diagButton) diagButton.style.display = 'none';
         
         // 显示弹窗式安装提示
         const pwaInstallContainer = document.getElementById('pwa-install-container');
@@ -136,8 +154,11 @@ function setupManualInstallButton() {
                             alert('Service Worker未正确注册，请刷新页面后重试。');
                             console.error('安装失败原因: Service Worker未注册');
                         } else {
-                            alert('您的浏览器不支持安装此应用，或者安装条件不满足。请尝试使用Chrome、Edge或Safari最新版本。');
+                            alert('您的浏览器不支持安装此应用，或者安装条件不满足。请点击"PWA诊断"按钮查看详细信息。');
                             console.log('安装失败原因: beforeinstallprompt事件未触发，但Service Worker已注册');
+                            // 显示诊断按钮
+                            const diagButton = document.getElementById('pwa-diag-button');
+                            if (diagButton) diagButton.style.display = 'inline-block';
                             // 尝试重新注册Service Worker
                             navigator.serviceWorker.register('./service-worker.js', {scope: './'})
                                 .then(reg => console.log('Service Worker重新注册成功:', reg.scope))
