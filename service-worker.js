@@ -1,7 +1,7 @@
 // 缓存名称和版本号（更新版本号可以强制更新缓存）
 const CACHE_NAME = 'jelisos-image-compressor-v1';
 
-// 需要缓存的资源列表 - 确保路径以 '../' 开头或使用绝对路径
+// 需要缓存的资源列表 - 确保路径以 './' 开头使用相对路径
 const CACHE_ASSETS = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const CACHE_ASSETS = [
   './share.js',
   './notifications.js',
   './pwa-updater.js',
+  './network-status.js',
   './manifest.json',
   './libs/browser-image-compression.min.js',
   './libs/jszip.min.js',
@@ -23,64 +24,14 @@ const CACHE_ASSETS = [
   './icons/icon-192x192.png',
   './icons/icon-384x384.png',
   './icons/icon-512x512.png',
+  './icons/offline-image.png',
   './placeholder-image.svg',
   './loading-image.svg',
   './bgz02.jpg',
   './offline.html'
 ];
 
-// 修改 fetch 事件处理，在离线时展示离线页面
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(cacheResponse => {
-        // 如果在缓存中找到，返回缓存的响应
-        if (cacheResponse) {
-          return cacheResponse;
-        }
-        
-        // 否则发起网络请求
-        return fetch(event.request)
-          .then(response => {
-            // 如果响应无效，直接返回
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            
-            // 为了不阻塞响应，创建一个响应的副本来缓存
-            let responseToCache = response.clone();
-            
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                // 将响应添加到缓存
-                cache.put(event.request, responseToCache);
-              });
-            
-            return response;
-          })
-          .catch(() => {
-            // 如果网络请求失败且是导航请求，返回离线页面
-            if (event.request.mode === 'navigate') {
-              return caches.match('/offline.html');
-            }
-            
-            // 如果是图片请求，返回默认图片
-            if (event.request.destination === 'image') {
-              return caches.match('/icons/offline-image.png');
-            }
-            
-            // 对于其他资源，返回简单的离线响应
-            return new Response('您处于离线状态，无法加载此资源。', {
-              status: 503,
-              statusText: 'Service Unavailable',
-              headers: new Headers({
-                'Content-Type': 'text/plain'
-              })
-            });
-          });
-      })
-  );
-});
+// 注意：Service Worker中的fetch事件处理已移至下方合并
 
 // 安装事件：预缓存所有静态资源
 self.addEventListener('install', event => {
@@ -134,6 +85,7 @@ self.addEventListener('activate', event => {
 });
 
 // 拦截网络请求：优先使用缓存，无缓存时请求网络
+// 注意：这里合并了两个fetch事件处理程序，确保离线功能正常工作
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
@@ -163,10 +115,24 @@ self.addEventListener('fetch', event => {
             return response;
           })
           .catch(() => {
-            // 如果网络请求失败且是文档类型，返回离线页面
+            // 如果网络请求失败且是导航请求，返回离线页面
             if (event.request.mode === 'navigate') {
-              return caches.match('./index.html');
+              return caches.match('./offline.html');
             }
+            
+            // 如果是图片请求，返回默认图片
+            if (event.request.destination === 'image') {
+              return caches.match('./icons/offline-image.png');
+            }
+            
+            // 对于其他资源，返回简单的离线响应
+            return new Response('您处于离线状态，无法加载此资源。', {
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: new Headers({
+                'Content-Type': 'text/plain'
+              })
+            });
           });
       })
   );
@@ -177,8 +143,8 @@ self.addEventListener('push', event => {
   const title = '图片压缩工具';
   const options = {
     body: event.data ? event.data.text() : '有新消息',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png'
+    icon: './icons/icon-192x192.png',
+    badge: './icons/icon-72x72.png'
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -187,65 +153,39 @@ self.addEventListener('push', event => {
 // 处理通知点击事件
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  
+  // 尝试查找已打开的窗口
   event.waitUntil(
-    clients.openWindow('https://jelisos.github.io/image-compression-tool/')
+    clients.matchAll({type: 'window'}).then(clientList => {
+      // 检查是否已经有打开的窗口
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // 如果没有打开的窗口，则打开一个新窗口
+      // 使用相对路径，而不是硬编码的URL
+      return clients.openWindow('./index.html');
+    })
   );
 });
 
-// 网络状态监控
-function updateOnlineStatus() {
-  const statusIndicator = document.createElement('div');
-  statusIndicator.id = 'network-status';
-  statusIndicator.style.position = 'fixed';
-  statusIndicator.style.bottom = '20px';
-  statusIndicator.style.right = '20px';
-  statusIndicator.style.padding = '8px 16px';
-  statusIndicator.style.borderRadius = '4px';
-  statusIndicator.style.fontSize = '14px';
-  statusIndicator.style.fontWeight = 'bold';
-  statusIndicator.style.zIndex = '9999';
-  statusIndicator.style.transition = 'opacity 0.5s';
-  
-  if (navigator.onLine) {
-    statusIndicator.textContent = '已恢复在线状态';
-    statusIndicator.style.backgroundColor = '#4CAF50';
-    statusIndicator.style.color = 'white';
-    
-    // 三秒后自动隐藏
-    setTimeout(() => {
-      statusIndicator.style.opacity = '0';
-      setTimeout(() => {
-        if (statusIndicator.parentNode) {
-          statusIndicator.parentNode.removeChild(statusIndicator);
-        }
-      }, 500);
-    }, 3000);
-  } else {
-    statusIndicator.textContent = '离线模式 - 部分功能受限';
-    statusIndicator.style.backgroundColor = '#FF9800';
-    statusIndicator.style.color = 'white';
-  }
-  
-  // 移除旧的状态指示器
-  const oldIndicator = document.getElementById('network-status');
-  if (oldIndicator) {
-    oldIndicator.parentNode.removeChild(oldIndicator);
-  }
-  
-  document.body.appendChild(statusIndicator);
+// 注意：Service Worker 环境中不能使用 window 和 document 对象
+// 网络状态变化可以通过 clients API 通知所有受控页面
+
+// 向所有客户端发送网络状态更新的消息
+function notifyClientsAboutNetworkStatus(isOnline) {
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'NETWORK_STATUS',
+        isOnline: isOnline
+      });
+    });
+  });
 }
 
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
+// 可以在主页面中监听这些消息并更新 UI
+// 这部分代码应该放在主页面的 JavaScript 中，而不是 Service Worker 中
 
-// 页面加载时检查
-if (!navigator.onLine) {
-  updateOnlineStatus();
-}
-
-// 处理来自客户端的消息
-self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
+// 注意：上面已经有一个消息处理事件监听器，不需要重复定义
