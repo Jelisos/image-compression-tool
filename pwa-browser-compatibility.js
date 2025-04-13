@@ -57,6 +57,9 @@ function detectBrowser() {
     } else if (/Safari/.test(userAgent) && !/Chrome/.test(userAgent)) {
         browserName = 'Safari';
         isCompatible = /Version\/1[3-9]/.test(userAgent); // Safari 13+支持PWA
+    } else if (/HuaweiBrowser/.test(userAgent)) {
+        browserName = '华为浏览器';
+        isCompatible = true; // 华为浏览器在移动端支持PWA
     } else if (/Quark/.test(userAgent)) {
         browserName = '夸克浏览器';
         isCompatible = false; // 夸克浏览器PWA支持有限，需要特殊处理
@@ -72,6 +75,15 @@ function detectBrowser() {
     } else if (/Baidu/.test(userAgent)) {
         browserName = '百度浏览器';
         isCompatible = false; // 百度浏览器PWA支持有限
+    } else if (/MiuiBrowser/.test(userAgent)) {
+        browserName = '小米浏览器';
+        isCompatible = false; // 小米浏览器PWA支持有限
+    } else if (/HeyTapBrowser/.test(userAgent)) {
+        browserName = 'OPPO浏览器';
+        isCompatible = false; // OPPO浏览器PWA支持有限
+    } else if (/VivoBrowser/.test(userAgent)) {
+        browserName = 'vivo浏览器';
+        isCompatible = false; // vivo浏览器PWA支持有限
     } else {
         browserName = '未知浏览器';
         isCompatible = false;
@@ -107,6 +119,35 @@ function detectBrowser() {
 // 应用浏览器特定的兼容性修复
 function applyBrowserWorkarounds() {
     const { name, isMobile } = browserCompatInfo;
+    
+    // 针对华为浏览器的特殊处理
+    if (name === '华为浏览器') {
+        console.log('应用华为浏览器兼容性优化...');
+        
+        // 华为浏览器支持PWA，使用特定的注册方式
+        if ('serviceWorker' in navigator) {
+            // 确保使用正确的scope
+            navigator.serviceWorker.register('./service-worker.js', {scope: './'})
+                .then(reg => {
+                    console.log('华为浏览器: Service Worker注册成功:', reg.scope);
+                    // 向Service Worker发送消息，使用华为浏览器优化策略
+                    if (reg.active) {
+                        reg.active.postMessage({
+                            type: 'BROWSER_INFO',
+                            browser: 'huawei'
+                        });
+                    }
+                })
+                .catch(err => console.error('华为浏览器: Service Worker注册失败:', err));
+        }
+        
+        // 记录应用的优化措施
+        browserCompatInfo.workarounds.push('华为浏览器优化');
+        browserCompatInfo.workarounds.push('使用特定缓存策略');
+        
+        // 检查manifest.json
+        checkManifestForHuawei();
+    }
     
     // 针对夸克浏览器的特殊处理
     if (name === '夸克浏览器') {
@@ -242,7 +283,7 @@ function checkStandaloneMode() {
 
 // 显示浏览器兼容性提示
 function showBrowserCompatibilityNotice() {
-    const { name, isCompatible } = browserCompatInfo;
+    const { name, isCompatible, isMobile } = browserCompatInfo;
     
     // 如果浏览器不完全兼容，显示提示
     if (!isCompatible) {
@@ -265,7 +306,7 @@ function showBrowserCompatibilityNotice() {
         // 设置提示内容
         let noticeText = '';
         if (name === '夸克浏览器' || name === 'UC浏览器' || name === 'QQ浏览器' || name === '百度浏览器') {
-            noticeText = `检测到您正在使用${name}，PWA安装功能可能受限。建议使用Chrome浏览器获得最佳体验。`;
+            noticeText = `检测到您正在使用${name}，PWA安装功能可能受限。建议使用${isMobile ? '华为浏览器' : 'Chrome浏览器'}获得最佳体验。`;
         } else if (name === '微信浏览器') {
             noticeText = '微信内置浏览器不支持PWA安装，请使用系统浏览器访问本站。';
         } else {
@@ -320,11 +361,124 @@ function queryServiceWorkerVersion() {
     }
 }
 
+// 显示浏览器推荐提示
+function showBrowserRecommendation(recommendedBrowser) {
+    // 创建推荐提示元素
+    const recommendation = document.createElement('div');
+    recommendation.style.position = 'fixed';
+    recommendation.style.bottom = '20px';
+    recommendation.style.left = '50%';
+    recommendation.style.transform = 'translateX(-50%)';
+    recommendation.style.backgroundColor = '#4a90e2';
+    recommendation.style.color = 'white';
+    recommendation.style.padding = '10px 20px';
+    recommendation.style.borderRadius = '5px';
+    recommendation.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    recommendation.style.zIndex = '9999';
+    recommendation.style.textAlign = 'center';
+    recommendation.style.maxWidth = '90%';
+    
+    recommendation.innerHTML = `
+        <p><strong>提示：</strong> 当前浏览器可能无法安装此应用</p>
+        <p>推荐使用 <strong>${recommendedBrowser}</strong> 获得最佳体验</p>
+        <button id="close-recommendation" style="background: transparent; border: 1px solid white; color: white; padding: 5px 10px; margin-top: 5px; border-radius: 3px;">我知道了</button>
+    `;
+    
+    document.body.appendChild(recommendation);
+    
+    // 添加关闭按钮事件
+    document.getElementById('close-recommendation').addEventListener('click', function() {
+        recommendation.style.display = 'none';
+        // 记住用户已关闭提示
+        localStorage.setItem('browser-recommendation-closed', 'true');
+    });
+    
+    // 5秒后自动隐藏
+    setTimeout(() => {
+        recommendation.style.opacity = '0';
+        recommendation.style.transition = 'opacity 0.5s';
+        setTimeout(() => recommendation.remove(), 500);
+    }, 5000);
+}
+
+// 清除PWA缓存
+function clearPWACache() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        console.log('请求清除PWA缓存...');
+        navigator.serviceWorker.controller.postMessage({
+            type: 'CLEAR_CACHE'
+        });
+        return true;
+    }
+    return false;
+}
+
+// 检查华为浏览器的manifest.json配置
+function checkManifestForHuawei() {
+    fetch('./manifest.json')
+        .then(response => response.json())
+        .then(manifest => {
+            console.log('检查manifest.json配置是否适合华为浏览器...');
+            
+            // 检查关键字段
+            const requiredFields = ['name', 'short_name', 'start_url', 'display', 'icons'];
+            const missingFields = requiredFields.filter(field => !manifest[field]);
+            
+            if (missingFields.length > 0) {
+                console.warn('manifest.json缺少华为浏览器所需的字段:', missingFields.join(', '));
+            } else {
+                console.log('manifest.json配置适合华为浏览器');
+            }
+            
+            // 检查图标
+            if (manifest.icons && manifest.icons.length > 0) {
+                const hasRequiredSizes = manifest.icons.some(icon => 
+                    icon.sizes === '192x192' || icon.sizes === '512x512');
+                
+                if (!hasRequiredSizes) {
+                    console.warn('manifest.json缺少华为浏览器所需的图标尺寸(192x192或512x512)');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('检查manifest.json失败:', error);
+        });
+}
+
+// 检查PWA安装兼容性
+function checkPWAInstallCompatibility() {
+    // 向Service Worker发送兼容性检查请求
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            type: 'CHECK_COMPATIBILITY'
+        });
+        
+        // 监听响应
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data && event.data.type === 'COMPATIBILITY_INFO') {
+                console.log('PWA兼容性检查结果:', event.data);
+                
+                // 如果不兼容，显示推荐浏览器
+                if (!event.data.isCompatible && !localStorage.getItem('browser-recommendation-closed')) {
+                    showBrowserRecommendation(event.data.recommendedBrowser);
+                }
+            }
+        });
+        
+        return true;
+    }
+    return false;
+}
+
 // 导出函数
 window.pwaCompat = {
     detectBrowser,
     applyBrowserWorkarounds,
-    queryServiceWorkerVersion
+    queryServiceWorkerVersion,
+    clearPWACache,
+    getBrowserInfo: () => browserCompatInfo,
+    checkStandaloneMode,
+    checkPWAInstallCompatibility
 };
 
 // 页面加载完成后查询Service Worker版本

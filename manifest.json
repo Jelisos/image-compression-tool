@@ -6,6 +6,10 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4a90e2",
+  "orientation": "any",
+  "categories": ["productivity", "utilities"],
+  "lang": "zh-CN",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "./icons/icon-72x72.png",
