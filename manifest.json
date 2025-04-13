@@ -1,5 +1,5 @@
 {
-  "name": "Jelisos 图片压缩工具",
+  "name": "图片压缩",
   "short_name": "图片压缩",
   "description": "免费批量图片压缩工具，极速处理，保持高质量效果",
   "start_url": "./index.html",

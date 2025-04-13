@@ -241,6 +241,27 @@ function checkServiceWorker() {
         });
 }
 
+// 检查是否需要显示安装提示
+function shouldShowInstallPrompt() {
+    // 如果已经以应用模式运行，不需要显示
+    if (pwaDiagnostics.isStandalone) {
+        return false;
+    }
+    
+    // 如果浏览器兼容且没有其他失败原因，不需要显示
+    if (pwaDiagnostics.browserInfo.isCompatible && !pwaDiagnostics.failureReason) {
+        return false;
+    }
+    
+    // 如果已经捕获到安装提示事件，说明可以正常安装，不需要显示提示
+    if (pwaDiagnostics.installPromptCaptured) {
+        return false;
+    }
+    
+    // 其他情况需要显示安装提示
+    return true;
+}
+
 // 更新UI显示诊断结果
 function updateDiagnosticsUI() {
     // 创建或获取诊断信息容器
@@ -510,7 +531,13 @@ function showPWADiagnostics() {
     runPWADiagnostics();
     const diagnosticsContainer = document.getElementById('pwa-diagnostics-container');
     if (diagnosticsContainer) {
-        diagnosticsContainer.style.display = 'block';
+        // 只有在需要显示安装提示时才显示诊断面板
+        if (shouldShowInstallPrompt()) {
+            diagnosticsContainer.style.display = 'block';
+        } else {
+            diagnosticsContainer.style.display = 'none';
+            console.log('✅ 当前浏览器可以正常安装PWA，无需显示安装提示');
+        }
     }
 }
 
@@ -537,5 +564,17 @@ window.runPWADiagnostics = runPWADiagnostics;
 // 页面加载完成后自动运行诊断
 window.addEventListener('load', () => {
     // 延迟运行诊断，确保其他脚本已加载
-    setTimeout(runPWADiagnostics, 1000);
+    setTimeout(() => {
+        runPWADiagnostics();
+        
+        // 根据诊断结果决定是否自动显示诊断面板
+        const diagnosticsContainer = document.getElementById('pwa-diagnostics-container');
+        if (diagnosticsContainer && shouldShowInstallPrompt()) {
+            diagnosticsContainer.style.display = 'block';
+            console.log('🔔 检测到浏览器无法正常安装PWA，显示安装提示');
+        } else if (diagnosticsContainer) {
+            diagnosticsContainer.style.display = 'none';
+            console.log('✅ 当前浏览器可以正常安装PWA，无需显示安装提示');
+        }
+    }, 1000);
 });
