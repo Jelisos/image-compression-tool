@@ -509,6 +509,32 @@ function notifyClientsAboutNetworkStatus(isOnline) {
   });
 }
 
+// 监听来自客户端的网络状态请求消息
+self.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'GET_NETWORK_STATUS') {
+    // 检查网络连接并回复客户端
+    fetch('./manifest.json', { 
+      method: 'HEAD',
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    })
+    .then(() => {
+      // 网络连接正常
+      event.source.postMessage({
+        type: 'NETWORK_STATUS',
+        isOnline: true
+      });
+    })
+    .catch(() => {
+      // 网络连接异常
+      event.source.postMessage({
+        type: 'NETWORK_STATUS',
+        isOnline: false
+      });
+    });
+  }
+});
+
 // 监听同步事件 - 用于后台同步
 self.addEventListener('sync', event => {
   console.log('[Service Worker] 收到同步事件:', event.tag);

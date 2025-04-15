@@ -383,17 +383,8 @@ window.addEventListener('DOMContentLoaded', function() {
         if (allLoaded) {
             console.log('✅ 所有必要的库都已加载，应用可以完全离线工作');
             
-            // 显示成功消息
-            const notice = document.createElement('div');
-            notice.style.cssText = 'position:fixed; bottom:10px; right:10px; padding:10px; background:#d4edda; color:#155724; border:1px solid #c3e6cb; border-radius:4px; z-index:1000; font-size:14px; max-width:300px;';
-            notice.innerHTML = '✅ 离线模式已启用，可以无网络使用所有功能';
-            document.body.appendChild(notice);
-            
-            setTimeout(() => {
-                notice.style.opacity = '0';
-                notice.style.transition = 'opacity 0.5s';
-                setTimeout(() => notice.remove(), 500);
-            }, 3000);
+            // 不再显示右下角的离线模式提示，改为只在控制台输出信息
+            // 用户可以通过页面底部的网络状态指示器查看网络状态
         } else {
             console.warn('⚠️ 某些库未能加载，但应用仍然可以使用内联替代方案工作');
         }
